@@ -5,13 +5,13 @@ import { prisma } from "./connect";
 
 declare module "next-auth" {
     interface Session {
-        user: User & { isAdmin: Boolean };
+        user: User & { isAdmin: boolean };
     }
 }
 
 declare module "next-auth/jwt" {
     interface JWT {
-        isAdmin: Boolean;
+        isAdmin: boolean;
     }
 }
 
@@ -39,7 +39,7 @@ export const authOptions: NextAuthOptions = {
                     email: token.email!,
                 },
             });
-            token.isAdmin = userInDb?.isAdmin!;
+            token.isAdmin = userInDb?.isAdmin ?? false;
             return token;
         }
     }

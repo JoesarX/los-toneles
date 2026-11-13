@@ -6,9 +6,9 @@ import { ProductType } from "@/types/types";
 // GET SINGLE PRODUCT
 export const GET = async (
     req: NextRequest,
-    { params }: { params: { id: string } }) => {
+    { params }: { params: Promise<{ id: string }> }) => {
 
-    const { id } = params;
+    const { id } = await params;
     try {
         const product = await prisma.product.findUnique({
             where: {
@@ -31,9 +31,9 @@ export const GET = async (
 // PUT/UPDATE SINGLE PRODUCT
 export const PUT = async (
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) => {
-    const { id } = params;
+    const { id } = await params;
     const session = await getAuthSession();
 
     if (session?.user.isAdmin) {
@@ -68,9 +68,9 @@ export const PUT = async (
 // DELETE SINGLE PRODUCT
 export const DELETE = async (
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) => {
-    const { id } = params;
+    const { id } = await params;
     const session = await getAuthSession();
 
     if (session?.user.isAdmin) {

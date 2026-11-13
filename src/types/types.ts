@@ -29,12 +29,18 @@ export type ProductType = {
 
 export type OrderType = {
     id: string;
-    userEmail: string;
+    userEmail?: string | null;
     price: number;
     products: CartItemType[];
     status: string;
     createdAt: Date;
-    intent_id?: String;
+    intent_id?: string;
+    source?: string;
+    customerName?: string | null;
+    amountPaid?: number | null;
+    changeGiven?: number | null;
+    paymentMethod?: string | null;
+    notes?: string | null;
 };
 
 export type CartItemType = {

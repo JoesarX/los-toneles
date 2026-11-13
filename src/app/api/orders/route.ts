@@ -1,60 +1,111 @@
 import { getAuthSession } from "@/utils/auth";
 import { prisma } from "@/utils/connect";
+import { isOrderStatus, toOrderType } from "@/lib/orders";
 import { NextRequest, NextResponse } from "next/server";
 
-// FETCH ALL ORDERS
-export const GET = async (req: NextRequest) => {
-    const session = await getAuthSession();
+// FETCH ORDERS
+export const GET = async () => {
+  const session = await getAuthSession();
 
-    if (session) {
-        try {
-            if (session.user.isAdmin) {
-                const orders = await prisma.orders.findMany();
-                return new NextResponse(JSON.stringify(orders), { status: 200 });
-            }
-            const orders = await prisma.orders.findMany({
-                where: {
-                    userEmail : session.user.email! as string,
-                },
-            });
-            return new NextResponse(JSON.stringify(orders), { status: 200 });
-        } catch (err) {
-            console.log(err);
-            return new NextResponse(
-                JSON.stringify({ message: "Something went wrong!" }),
-                { status: 500 }
-            );
-        }
-    } else {
-        return new NextResponse(
-            JSON.stringify({ message: "You are not authenticated!" }),
-            { status: 401 }
-        );
-    }
+  if (!session) {
+    return new NextResponse(
+      JSON.stringify({ message: "You are not authenticated!" }),
+      { status: 401 }
+    );
+  }
+
+  try {
+    const orders = await prisma.orders.findMany({
+      where: session.user.isAdmin
+        ? undefined
+        : { userEmail: session.user.email ?? "__none__" },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const response = new NextResponse(
+      JSON.stringify(orders.map(toOrderType)),
+      { status: 200 }
+    );
+    response.headers.set("Cache-Control", "no-store");
+    return response;
+  } catch (err) {
+    console.log(err);
+    return new NextResponse(
+      JSON.stringify({ message: "Something went wrong!" }),
+      { status: 500 }
+    );
+  }
 };
 
 // CREATE ORDER
 export const POST = async (req: NextRequest) => {
-    const session = await getAuthSession();
+  const session = await getAuthSession();
 
-    if (session) {
-        try {
-            const body = await req.json();
-            const orders = await prisma.orders.create({
-                data: body,
-            });
-            return new NextResponse(JSON.stringify(orders), { status: 201 });
-        } catch (err) {
-            console.log(err);
-            return new NextResponse(
-                JSON.stringify({ message: "Something went wrong!" }),
-                { status: 500 }
-            );
-        }
-    } else {
-        return new NextResponse(
-            JSON.stringify({ message: "You are not authenticated!" }),
-            { status: 401 }
-        );
+  if (!session) {
+    return new NextResponse(
+      JSON.stringify({ message: "You are not authenticated!" }),
+      { status: 401 }
+    );
+  }
+
+  try {
+    const body = await req.json();
+    const isAdmin = session.user.isAdmin === true;
+    const isRegister = isAdmin && body.source === "register";
+    const source = isRegister ? "register" : "online";
+    const userEmail = isRegister ? null : session.user.email ?? null;
+
+    if (!isRegister && !userEmail) {
+      return new NextResponse(
+        JSON.stringify({ message: "Missing user email." }),
+        { status: 400 }
+      );
     }
+
+    const products = Array.isArray(body.products) ? body.products : [];
+    const price = Number(body.price);
+
+    if (!Number.isFinite(price) || price < 0) {
+      return new NextResponse(
+        JSON.stringify({ message: "Invalid order total." }),
+        { status: 400 }
+      );
+    }
+
+    const status =
+      isAdmin && isOrderStatus(body.status) ? body.status : "pending";
+    const amountPaid = isRegister ? Number(body.amountPaid) : null;
+    const changeGiven = isRegister ? Number(body.changeGiven) : null;
+
+    const order = await prisma.orders.create({
+      data: {
+        price,
+        products,
+        status,
+        source,
+        userEmail,
+        customerName:
+          typeof body.customerName === "string" && body.customerName.trim()
+            ? body.customerName.trim()
+            : null,
+        amountPaid: Number.isFinite(amountPaid) ? amountPaid : null,
+        changeGiven: Number.isFinite(changeGiven) ? changeGiven : null,
+        paymentMethod: isRegister ? "cash" : body.paymentMethod ?? null,
+        notes:
+          typeof body.notes === "string" && body.notes.trim()
+            ? body.notes.trim()
+            : null,
+      },
+    });
+
+    return new NextResponse(JSON.stringify(toOrderType(order)), {
+      status: 201,
+    });
+  } catch (err) {
+    console.log(err);
+    return new NextResponse(
+      JSON.stringify({ message: "Something went wrong!" }),
+      { status: 500 }
+    );
+  }
 };
