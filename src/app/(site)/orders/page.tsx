@@ -91,7 +91,7 @@ const OrdersPage = () => {
   }
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.28em] text-terracotta">
@@ -113,7 +113,7 @@ const OrdersPage = () => {
       </div>
 
       {loading ? (
-        <div className="mt-10 space-y-4">
+        <div className="mt-8 space-y-4">
           {Array.from({ length: 3 }).map((_, index) => (
             <div
               key={index}
@@ -122,7 +122,7 @@ const OrdersPage = () => {
           ))}
         </div>
       ) : error ? (
-        <div className="mt-10 rounded-[2rem] border border-dashed border-sand-deep bg-white/40 px-6 py-16 text-center">
+        <div className="mt-8 rounded-[2rem] border border-dashed border-sand-deep bg-white/40 px-6 py-12 text-center">
           <ReceiptText className="mx-auto h-8 w-8 text-terracotta" />
           <h2 className="mt-4 font-display text-2xl font-semibold text-tonel">
             Algo salió mal
@@ -130,7 +130,7 @@ const OrdersPage = () => {
           <p className="mt-2 text-sm text-espresso/60">{error}</p>
         </div>
       ) : orders.length === 0 ? (
-        <div className="mt-10 flex flex-col items-center justify-center rounded-[2.5rem] border border-dashed border-sand-deep bg-white/40 px-6 py-20 text-center">
+        <div className="mt-8 flex flex-col items-center justify-center rounded-[2.5rem] border border-dashed border-sand-deep bg-white/40 px-6 py-12 text-center sm:py-16">
           <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-sand text-tonel">
             <PackageOpen className="h-8 w-8" />
           </span>
@@ -150,7 +150,7 @@ const OrdersPage = () => {
           </Link>
         </div>
       ) : (
-        <div className="mt-10 space-y-4">
+        <div className="mt-8 space-y-4">
           {orders.map((order) => {
             const status = getStatus(order.status);
             const products = order.products ?? [];

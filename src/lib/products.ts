@@ -2,7 +2,7 @@ import type { Product } from "@prisma/client";
 import { prisma } from "@/utils/connect";
 import type { ProductType } from "@/types/types";
 
-const toProduct = (row: Product): ProductType => {
+export const toProduct = (row: Product): ProductType => {
   const options = Array.isArray(row.options)
     ? row.options
         .map((option) => {

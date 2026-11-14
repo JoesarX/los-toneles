@@ -25,7 +25,7 @@ const LoginPage = () => {
   }
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto grid max-w-5xl overflow-hidden rounded-[2.5rem] border border-sand bg-white/60 shadow-soft md:grid-cols-2">
         <div className="relative hidden min-h-[520px] md:block">
           <Image
@@ -46,7 +46,7 @@ const LoginPage = () => {
           </div>
         </div>
 
-        <div className="flex flex-col justify-center p-7 sm:p-10">
+        <div className="flex flex-col justify-center p-6 sm:p-8">
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-terracotta/10 text-terracotta">
             <LockKeyhole className="h-6 w-6" />
           </span>

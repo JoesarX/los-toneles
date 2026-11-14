@@ -37,7 +37,7 @@ const steps = [
 ];
 
 const FeaturedSkeleton = () => (
-  <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+  <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
     <div className="h-8 w-56 animate-pulse rounded-full bg-sand" />
     <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 3 }).map((_, index) => (
@@ -59,7 +59,7 @@ const HomePage = () => {
         <FeaturedProducts />
       </Suspense>
 
-      <section className="bg-sand/40 py-20">
+      <section className="bg-sand/40 py-10 sm:py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl">
             <p className="inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.28em] text-terracotta">
@@ -75,7 +75,7 @@ const HomePage = () => {
             </p>
           </div>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
             {categories.map((category) => (
               <CategoryCard key={category.slug} category={category} />
             ))}
@@ -83,8 +83,8 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+        <div className="grid items-center gap-10 lg:grid-cols-2">
           <div className="relative">
             <div className="relative aspect-[4/5] overflow-hidden rounded-[2.5rem] border border-sand bg-sand shadow-soft sm:aspect-[5/4] lg:aspect-[4/5]">
               <div className="absolute inset-0 bg-[url('/contactanosLosToneles.jpg')] bg-cover bg-center" />
@@ -146,7 +146,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="bg-tonel py-20 text-cream">
+      <section className="bg-tonel py-10 text-cream sm:py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
@@ -169,7 +169,7 @@ const HomePage = () => {
             </div>
           </div>
 
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
             {steps.map((step, index) => (
               <div
                 key={step.title}
@@ -195,7 +195,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
         <div className="grid gap-6 md:grid-cols-3">
           <div className="rounded-[2rem] border border-sand bg-white/60 p-6 md:col-span-2">
             <div className="flex items-start gap-4">

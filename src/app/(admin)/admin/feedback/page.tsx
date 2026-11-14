@@ -174,17 +174,17 @@ const AdminCommentsPage = () => {
       </div>
 
       {isError ? (
-        <div className="mt-8 rounded-2xl border border-terracotta/20 bg-terracotta/5 px-6 py-12 text-center">
+        <div className="mt-8 rounded-2xl border border-terracotta/20 bg-terracotta/5 px-6 py-10 text-center">
           <p className="font-display text-2xl font-semibold text-terracotta-deep">
             No pudimos cargar los comentarios
           </p>
         </div>
       ) : isLoading ? (
-        <div className="mt-6 flex items-center justify-center rounded-3xl border border-sand bg-white/50 py-20 text-tonel">
+        <div className="mt-6 flex items-center justify-center rounded-3xl border border-sand bg-white/50 py-12 text-tonel">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="mt-8 flex flex-col items-center rounded-3xl border border-dashed border-sand-deep bg-white/40 px-6 py-16 text-center">
+        <div className="mt-8 flex flex-col items-center rounded-3xl border border-dashed border-sand-deep bg-white/40 px-6 py-12 text-center">
           <MessageSquare className="h-8 w-8 text-espresso/25" />
           <p className="mt-3 font-display text-2xl font-semibold text-tonel">
             Sin comentarios

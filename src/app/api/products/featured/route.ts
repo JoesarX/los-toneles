@@ -1,32 +1,40 @@
+import { toProduct } from "@/lib/products";
 import { prisma } from "@/utils/connect";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-// FETCH ALL PRODUCTS
-export const GET = async (req: NextRequest) => {
-    try {
-        const products = await prisma.$queryRaw`
-            SELECT * 
-            FROM "Product" 
-            WHERE "Product"."isFeatured" = true AND "Product"."isVisible" = true 
-            ORDER BY 
-                CASE 
-                    WHEN "Product"."catSlug" = 'Comida' THEN 1
-                    WHEN "Product"."catSlug" = 'Bebida' THEN 2
-                    WHEN "Product"."catSlug" = 'Otros' THEN 3
-                    ELSE 4
-                END,
-                "Product"."title" ASC;
+const categoryOrder: Record<string, number> = {
+  Comida: 1,
+  Bebida: 2,
+  Otros: 3,
+};
 
-        `;
-        const response = new NextResponse(JSON.stringify(products), { status: 200 });
-        response.headers.set("Cache-Control", "no-store");
-        return response;
+// FETCH FEATURED PRODUCTS
+export const GET = async () => {
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        isFeatured: true,
+        isVisible: true,
+      },
+    });
 
-    } catch (err) {
-        console.log(err);
-        return new NextResponse(
-            JSON.stringify({ message: "Algo salio mal con el fetch de los productos!" }),
-            { status: 500 }
-        );
-    }
+    products.sort(
+      (a, b) =>
+        (categoryOrder[a.catSlug] ?? 4) - (categoryOrder[b.catSlug] ?? 4) ||
+        a.title.localeCompare(b.title)
+    );
+
+    const response = new NextResponse(
+      JSON.stringify(products.map(toProduct)),
+      { status: 200 }
+    );
+    response.headers.set("Cache-Control", "no-store");
+    return response;
+  } catch (err) {
+    console.log(err);
+    return new NextResponse(
+      JSON.stringify({ message: "Algo salio mal con el fetch de los productos!" }),
+      { status: 500 }
+    );
+  }
 };

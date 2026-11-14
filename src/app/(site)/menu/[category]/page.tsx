@@ -43,7 +43,7 @@ const CategoryPage = async ({ params }: Props) => {
           className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-amber/20 blur-3xl"
           aria-hidden="true"
         />
-        <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
+        <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
           <nav className="flex items-center gap-2 text-xs font-semibold text-espresso/50">
             <Link href="/" className="transition hover:text-tonel">
               Inicio
@@ -56,7 +56,7 @@ const CategoryPage = async ({ params }: Props) => {
             <span className="text-tonel">{current.title}</span>
           </nav>
 
-          <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.28em] text-terracotta">
                 <span className="h-px w-10 bg-terracotta/60" />
@@ -65,7 +65,7 @@ const CategoryPage = async ({ params }: Props) => {
               <h1 className="mt-3 font-display text-5xl font-semibold leading-tight text-tonel sm:text-6xl">
                 {current.title}
               </h1>
-              <p className="mt-4 max-w-2xl text-pretty text-base leading-relaxed text-espresso/65">
+              <p className="mt-3 max-w-2xl text-pretty text-sm leading-relaxed text-espresso/65 sm:text-base">
                 {current.description}
               </p>
             </div>
@@ -75,7 +75,7 @@ const CategoryPage = async ({ params }: Props) => {
             </p>
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-2">
+          <div className="mt-6 flex flex-wrap gap-2">
             {categories.map((item) => (
               <Link
                 key={item.slug}
@@ -93,7 +93,7 @@ const CategoryPage = async ({ params }: Props) => {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         {products.length > 0 ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {products.map((product, index) => (
@@ -105,7 +105,7 @@ const CategoryPage = async ({ params }: Props) => {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-[2rem] border border-dashed border-sand-deep bg-white/40 px-6 py-20 text-center">
+          <div className="flex flex-col items-center justify-center rounded-[2rem] border border-dashed border-sand-deep bg-white/40 px-6 py-12 text-center sm:py-16">
             <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sand text-tonel">
               <UtensilsCrossed className="h-7 w-7" />
             </span>
@@ -126,7 +126,7 @@ const CategoryPage = async ({ params }: Props) => {
           </div>
         )}
 
-        <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-sand pt-8">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-sand pt-6">
           <Link
             href="/menu"
             className="inline-flex items-center gap-2 text-sm font-bold text-tonel transition hover:text-terracotta"

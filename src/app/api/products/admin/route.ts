@@ -1,9 +1,10 @@
+import { toProduct } from "@/lib/products";
 import { getAuthSession } from "@/utils/auth";
 import { prisma } from "@/utils/connect";
 import { NextRequest, NextResponse } from "next/server";
 
 // FETCH ALL PRODUCTS
-export const GET = async (req: NextRequest) => {
+export const GET = async () => {
     const session = await getAuthSession();
 
     if (session?.user.isAdmin) {
@@ -23,7 +24,10 @@ export const GET = async (req: NextRequest) => {
                     },
                 ]
             });
-            const response = new NextResponse(JSON.stringify(products), { status: 200 });
+            const response = new NextResponse(
+                JSON.stringify(products.map(toProduct)),
+                { status: 200 }
+            );
             response.headers.set("Cache-Control", "no-store");
             return response
         } catch (err) {
@@ -50,7 +54,9 @@ export const POST = async (req: NextRequest) => {
             });
 
             
-            return new NextResponse(JSON.stringify(product), { status: 201 });
+            return new NextResponse(JSON.stringify(toProduct(product)), {
+                status: 201,
+            });
         } catch (err) {
             console.log(err);
             return new NextResponse(

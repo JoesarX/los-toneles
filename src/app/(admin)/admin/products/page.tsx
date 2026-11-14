@@ -179,7 +179,7 @@ const AdminProductsPage = () => {
       </div>
 
       {isError ? (
-        <div className="mt-8 rounded-2xl border border-terracotta/20 bg-terracotta/5 px-6 py-12 text-center">
+        <div className="mt-8 rounded-2xl border border-terracotta/20 bg-terracotta/5 px-6 py-10 text-center">
           <p className="font-display text-2xl font-semibold text-terracotta-deep">
             No pudimos cargar los productos
           </p>
@@ -194,7 +194,7 @@ const AdminProductsPage = () => {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="mt-8 flex flex-col items-center rounded-3xl border border-dashed border-sand-deep bg-white/40 px-6 py-16 text-center">
+        <div className="mt-8 flex flex-col items-center rounded-3xl border border-dashed border-sand-deep bg-white/40 px-6 py-12 text-center">
           <UtensilsCrossed className="h-8 w-8 text-espresso/25" />
           <p className="mt-3 font-display text-2xl font-semibold text-tonel">
             Sin productos

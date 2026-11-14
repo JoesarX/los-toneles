@@ -48,7 +48,7 @@ const SingleProductPage = async ({ params }: Props) => {
 
   return (
     <>
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <nav className="flex flex-wrap items-center gap-2 text-xs font-semibold text-espresso/50">
           <Link href="/" className="transition hover:text-tonel">
             Inicio
@@ -72,7 +72,7 @@ const SingleProductPage = async ({ params }: Props) => {
           <span className="text-tonel">{product.title}</span>
         </nav>
 
-        <div className="mt-6 grid items-start gap-10 lg:grid-cols-[1.05fr_1fr]">
+        <div className="mt-5 grid items-start gap-8 lg:grid-cols-[1.05fr_1fr]">
           <div className="relative aspect-square overflow-hidden rounded-[2.5rem] border border-sand bg-gradient-to-br from-sand/80 via-cream to-sand/40 shadow-soft">
             {product.img ? (
               <Image
@@ -81,7 +81,7 @@ const SingleProductPage = async ({ params }: Props) => {
                 fill
                 priority
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-contain p-8 sm:p-12"
+                className="object-contain p-6 sm:p-10"
               />
             ) : (
               <div className="flex h-full items-center justify-center text-sm font-semibold text-espresso/40">
@@ -97,7 +97,7 @@ const SingleProductPage = async ({ params }: Props) => {
             )}
           </div>
 
-          <div className="lg:py-6">
+          <div className="lg:py-2">
             <div className="flex flex-wrap items-center gap-2">
               {category && (
                 <Link
@@ -121,7 +121,7 @@ const SingleProductPage = async ({ params }: Props) => {
 
             <Price product={product} />
 
-            <div className="mt-8 grid gap-3 border-t border-sand pt-6 sm:grid-cols-2">
+            <div className="mt-6 grid gap-3 border-t border-sand pt-5 sm:grid-cols-2">
               <div className="flex items-start gap-3 rounded-2xl bg-white/60 p-4">
                 <Banknote className="mt-0.5 h-5 w-5 shrink-0 text-olive" />
                 <div>
@@ -156,7 +156,7 @@ const SingleProductPage = async ({ params }: Props) => {
       </section>
 
       {related.length > 0 && (
-        <section className="bg-sand/40 py-16">
+        <section className="bg-sand/40 py-10 sm:py-12">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex items-end justify-between gap-4">
               <div>
@@ -178,7 +178,7 @@ const SingleProductPage = async ({ params }: Props) => {
               )}
             </div>
 
-            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((item) => (
                 <ProductCard key={item.id} product={item} />
               ))}

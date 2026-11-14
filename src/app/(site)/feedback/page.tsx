@@ -115,24 +115,24 @@ const FeedbackPage = () => {
           className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-terracotta/10 blur-3xl"
           aria-hidden="true"
         />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
           <p className="inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.28em] text-terracotta">
             <span className="h-px w-10 bg-terracotta/60" />
             Tu opinión
           </p>
-          <h1 className="mt-4 max-w-3xl text-balance font-display text-5xl font-semibold leading-[1.05] text-tonel sm:text-6xl">
+          <h1 className="mt-3 max-w-3xl text-balance font-display text-4xl font-semibold leading-[1.05] text-tonel sm:text-5xl">
             Déjanos tu comentario
           </h1>
-          <p className="mt-5 max-w-2xl text-pretty text-base leading-relaxed text-espresso/65 sm:text-lg">
+          <p className="mt-3 max-w-2xl text-pretty text-sm leading-relaxed text-espresso/65 sm:text-base">
             Nos ayuda a seguir mejorando. Cuéntanos cómo fue tu experiencia con
             la comida y con nuestro sitio web.
           </p>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-          <div className="rounded-[2.5rem] bg-tonel p-7 text-cream sm:p-9">
+          <div className="rounded-[2.5rem] bg-tonel p-6 text-cream sm:p-7">
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cream/10 text-amber">
               <MessageSquareHeart className="h-6 w-6" />
             </span>
@@ -167,9 +167,9 @@ const FeedbackPage = () => {
             </div>
           </div>
 
-          <div className="rounded-[2.5rem] border border-sand bg-white/70 p-6 shadow-soft sm:p-9">
+          <div className="rounded-[2.5rem] border border-sand bg-white/70 p-6 shadow-soft sm:p-7">
             {status === "unauthenticated" ? (
-              <div className="flex h-full flex-col items-center justify-center py-12 text-center">
+              <div className="flex h-full flex-col items-center justify-center py-8 text-center">
                 <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sand text-tonel">
                   <LockKeyhole className="h-7 w-7" />
                 </span>

@@ -1,7 +1,7 @@
+import { toProduct } from "@/lib/products";
 import { getAuthSession } from "@/utils/auth";
 import { prisma } from "@/utils/connect";
 import { NextRequest, NextResponse } from "next/server";
-import { ProductType } from "@/types/types";
 
 // GET SINGLE PRODUCT
 export const GET = async (
@@ -16,7 +16,10 @@ export const GET = async (
             },
         });
 
-        const response = new NextResponse(JSON.stringify(product), { status: 200 });
+        const response = new NextResponse(
+            JSON.stringify(product ? toProduct(product) : null),
+            { status: 200 }
+        );
         response.headers.set("Cache-Control", "no-store");
         return response
     } catch (err) {
@@ -45,7 +48,7 @@ export const PUT = async (
             });
 
             return new NextResponse(
-                JSON.stringify(updatedProduct),
+                JSON.stringify(toProduct(updatedProduct)),
                 { status: 200 }
             );
         } catch (err) {

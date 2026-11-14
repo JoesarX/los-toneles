@@ -23,22 +23,22 @@ const ContactPage = () => {
           className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-olive/10 blur-3xl"
           aria-hidden="true"
         />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
           <p className="inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.28em] text-terracotta">
             <span className="h-px w-10 bg-terracotta/60" />
             Estamos cerca
           </p>
-          <h1 className="mt-4 max-w-3xl text-balance font-display text-5xl font-semibold leading-[1.05] text-tonel sm:text-6xl">
+          <h1 className="mt-3 max-w-3xl text-balance font-display text-4xl font-semibold leading-[1.05] text-tonel sm:text-5xl">
             Contáctanos
           </h1>
-          <p className="mt-5 max-w-2xl text-pretty text-base leading-relaxed text-espresso/65 sm:text-lg">
+          <p className="mt-3 max-w-2xl text-pretty text-sm leading-relaxed text-espresso/65 sm:text-base">
             ¿Quieres reservar, preguntar por un platillo o simplemente saber
             cómo llegar? Aquí tienes todo lo que necesitas.
           </p>
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
         <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
           <div className="space-y-4">
             <a

@@ -27,7 +27,7 @@ const CartPage = () => {
   const mounted = useCartHydrated();
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.28em] text-terracotta">
@@ -57,7 +57,7 @@ const CartPage = () => {
       </div>
 
       {!mounted ? (
-        <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_380px]">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_380px]">
           <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, index) => (
               <div
@@ -69,7 +69,7 @@ const CartPage = () => {
           <div className="h-64 animate-pulse rounded-3xl border border-sand bg-white/50" />
         </div>
       ) : products.length === 0 ? (
-        <div className="mt-10 flex flex-col items-center justify-center rounded-[2.5rem] border border-dashed border-sand-deep bg-white/40 px-6 py-20 text-center">
+        <div className="mt-8 flex flex-col items-center justify-center rounded-[2.5rem] border border-dashed border-sand-deep bg-white/40 px-6 py-12 text-center sm:py-16">
           <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-sand text-tonel">
             <ShoppingBag className="h-8 w-8" />
           </span>
@@ -89,7 +89,7 @@ const CartPage = () => {
           </Link>
         </div>
       ) : (
-        <div className="mt-10 grid items-start gap-6 lg:grid-cols-[1fr_380px]">
+        <div className="mt-8 grid items-start gap-6 lg:grid-cols-[1fr_380px]">
           <div className="space-y-4">
             {products.map((item) => {
               const key = `${item.id}${item.optionTitle ? `-${item.optionTitle}` : ""}`;
@@ -171,7 +171,7 @@ const CartPage = () => {
             })}
           </div>
 
-          <aside className="rounded-[2rem] border border-sand bg-white/70 p-6 shadow-soft lg:sticky lg:top-32">
+          <aside className="rounded-[2rem] border border-sand bg-white/70 p-6 shadow-soft lg:sticky lg:top-24">
             <h2 className="font-display text-2xl font-semibold text-tonel">
               Resumen
             </h2>

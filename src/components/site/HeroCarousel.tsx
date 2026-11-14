@@ -93,7 +93,7 @@ const HeroCarousel = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-espresso/90 via-espresso/60 to-espresso/10" />
               <div className="absolute inset-0 bg-gradient-to-t from-espresso/80 via-transparent to-transparent" />
 
-              <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-24 pt-20 sm:px-6 lg:px-8">
+              <div className="relative mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-20 pt-16 sm:px-6 lg:px-8">
                 <div className="max-w-3xl">
                   <p className="inline-flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.28em] text-amber">
                     <span className="h-px w-10 bg-amber/70" />

@@ -22,10 +22,14 @@ import { toast } from "react-toastify";
 
 const formatMoney = (value: number) => `L. ${Number(value).toFixed(2)}`;
 
-const productPrice = (product: ProductType) =>
-  product.options && product.options.length > 0
-    ? Math.min(...product.options.map((option) => option.additionalPrice))
-    : product.price;
+const productPrice = (product: ProductType) => {
+  const value =
+    product.options && product.options.length > 0
+      ? Math.min(...product.options.map((option) => Number(option.additionalPrice)))
+      : Number(product.price);
+
+  return Number.isFinite(value) ? value : 0;
+};
 
 const lineKey = (item: CartItemType) =>
   item.optionTitle ? `${item.id}-${item.optionTitle}` : item.id;
@@ -55,7 +59,7 @@ const AdminRegisterPage = () => {
     },
   });
 
-  const total = cart.reduce((sum, item) => sum + item.subtotal, 0);
+  const total = cart.reduce((sum, item) => sum + Number(item.subtotal || 0), 0);
   const cashValue = cashGiven.trim() === "" ? 0 : Number(cashGiven);
   const cashValid = cashGiven.trim() !== "" && cashValue >= total;
   const change = cashValid ? cashValue - total : 0;
@@ -85,7 +89,10 @@ const AdminRegisterPage = () => {
     product: ProductType,
     option?: { title: string; additionalPrice: number }
   ) => {
-    const price = option ? option.additionalPrice : product.price;
+    const price = Number(
+      option ? option.additionalPrice : product.price
+    );
+    const safePrice = Number.isFinite(price) ? price : 0;
     const optionTitle = option?.title;
     const key = optionTitle ? `${product.id}-${optionTitle}` : product.id;
 
@@ -98,7 +105,7 @@ const AdminRegisterPage = () => {
             ? {
                 ...item,
                 quantity: item.quantity + 1,
-                subtotal: item.subtotal + price,
+                subtotal: Number(item.subtotal || 0) + safePrice,
               }
             : item
         );
@@ -109,8 +116,8 @@ const AdminRegisterPage = () => {
           id: product.id,
           title: product.title,
           img: product.img,
-          price,
-          subtotal: price,
+          price: safePrice,
+          subtotal: safePrice,
           quantity: 1,
           ...(optionTitle ? { optionTitle } : {}),
         },
@@ -137,7 +144,7 @@ const AdminRegisterPage = () => {
           {
             ...line,
             quantity,
-            subtotal: line.price * quantity,
+            subtotal: Number(line.price) * quantity,
           },
         ];
       })
@@ -289,7 +296,7 @@ const AdminRegisterPage = () => {
           </div>
 
           {isError ? (
-            <div className="mt-4 rounded-2xl border border-terracotta/20 bg-terracotta/5 px-5 py-10 text-center">
+            <div className="mt-4 rounded-2xl border border-terracotta/20 bg-terracotta/5 px-5 py-8 text-center">
               <p className="text-sm font-semibold text-terracotta-deep">
                 No se pudieron cargar los productos.
               </p>
@@ -311,7 +318,7 @@ const AdminRegisterPage = () => {
               ))}
             </div>
           ) : filteredProducts.length === 0 ? (
-            <p className="mt-6 rounded-2xl border border-dashed border-sand-deep px-4 py-10 text-center text-sm text-espresso/45">
+            <p className="mt-6 rounded-2xl border border-dashed border-sand-deep px-4 py-8 text-center text-sm text-espresso/45">
               No encontramos productos con esa búsqueda.
             </p>
           ) : (
@@ -359,7 +366,7 @@ const AdminRegisterPage = () => {
           )}
         </section>
 
-        <aside className="rounded-3xl border border-sand bg-white/80 p-5 shadow-sm lg:sticky lg:top-32">
+        <aside className="rounded-3xl border border-sand bg-white/80 p-5 shadow-sm lg:sticky lg:top-24">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-2xl font-semibold text-tonel">
               Venta actual
