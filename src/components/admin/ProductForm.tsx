@@ -2,7 +2,15 @@
 
 import { categories } from "@/data/categories";
 import type { ProductType } from "@/types/types";
-import { ArrowLeft, ImageIcon, Loader2, Plus, Save, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ImageIcon,
+  Loader2,
+  Plus,
+  Save,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -31,6 +39,7 @@ const ProductForm = ({ mode, product }: Props) => {
   const [optionTitle, setOptionTitle] = useState("");
   const [optionPrice, setOptionPrice] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const handleAddOption = () => {
     const cleanTitle = optionTitle.trim();
@@ -55,6 +64,54 @@ const ProductForm = ({ mode, product }: Props) => {
     ]);
     setOptionTitle("");
     setOptionPrice("");
+  };
+
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const input = event.target;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecciona un archivo de imagen.");
+      input.value = "";
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error("La imagen no puede superar los 4 MB.");
+      input.value = "";
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.url) {
+        throw new Error(data?.message ?? "No se pudo subir la imagen.");
+      }
+
+      setImg(data.url);
+      toast.success("Imagen subida.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo subir la imagen."
+      );
+    } finally {
+      setUploading(false);
+      input.value = "";
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -330,15 +387,34 @@ const ProductForm = ({ mode, product }: Props) => {
                 </div>
               )}
             </div>
+            <label
+              className={`mt-3 inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-tonel px-4 py-2.5 text-xs font-bold text-cream transition hover:bg-tonel-deep ${
+                uploading ? "pointer-events-none opacity-60" : ""
+              }`}
+            >
+              {uploading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Upload className="h-3.5 w-3.5" />
+              )}
+              {uploading ? "Subiendo..." : "Subir imagen"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleImageUpload}
+                disabled={uploading}
+                className="sr-only"
+              />
+            </label>
             <input
               value={img}
               onChange={(event) => setImg(event.target.value)}
-              placeholder="/temporary/foto.png o URL de Cloudinary"
-              className="mt-3 w-full rounded-xl border border-sand bg-white px-3 py-2.5 text-xs outline-none focus:border-terracotta"
+              placeholder="URL de la imagen o /temporary/foto.png"
+              className="mt-2 w-full rounded-xl border border-sand bg-white px-3 py-2.5 text-xs outline-none focus:border-terracotta"
             />
             <p className="mt-2 text-[11px] leading-relaxed text-espresso/45">
-              Usa una ruta local (/temporary/...) o una URL de Cloudinary. La
-              subida automática todavía no está conectada.
+              Sube un archivo (máx. 4 MB) o pega una URL. Las imágenes se
+              guardan en Vercel Blob.
             </p>
           </section>
 
