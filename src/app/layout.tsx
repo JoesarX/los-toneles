@@ -9,6 +9,7 @@ import { config } from "@fortawesome/fontawesome-svg-core";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
+import "./toast.css";
 
 config.autoAddCss = false;
 
@@ -70,7 +71,18 @@ export default function RootLayout({
         <AuthProvider>
           <QueryProvider>{children}</QueryProvider>
         </AuthProvider>
-        <ToastContainer position="bottom-right" theme="light" autoClose={3000} />
+        <ToastContainer
+          position="bottom-right"
+          theme="light"
+          autoClose={3200}
+          newestOnTop
+          closeOnClick
+          pauseOnFocusLoss
+          pauseOnHover
+          draggable
+          limit={4}
+          toastClassName="tonel-toast"
+        />
         <SpeedInsights />
         <Analytics />
       </body>

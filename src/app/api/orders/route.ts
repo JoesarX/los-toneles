@@ -1,10 +1,15 @@
 import { getAuthSession } from "@/utils/auth";
 import { prisma } from "@/utils/connect";
-import { isOrderStatus, toOrderType } from "@/lib/orders";
+import {
+  isOrderStatus,
+  OPEN_STATUSES,
+  toOrderType,
+} from "@/lib/orders";
+import type { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 // FETCH ORDERS
-export const GET = async () => {
+export const GET = async (req: NextRequest) => {
   const session = await getAuthSession();
 
   if (!session) {
@@ -15,11 +20,34 @@ export const GET = async () => {
   }
 
   try {
+    const params = req.nextUrl.searchParams;
+    const source = params.get("source");
+    const statusParam = params.get("status");
+    const openOnly = params.get("open") === "true";
+    const requestedLimit = Number(params.get("limit"));
+    const take =
+      Number.isFinite(requestedLimit) && requestedLimit > 0
+        ? Math.min(Math.floor(requestedLimit), 200)
+        : undefined;
+
+    const filters: Prisma.OrdersWhereInput = {};
+    if (source) filters.source = source;
+    if (statusParam && isOrderStatus(statusParam)) {
+      filters.status = statusParam;
+    }
+    if (openOnly) {
+      filters.status = { in: OPEN_STATUSES };
+    }
+
     const orders = await prisma.orders.findMany({
       where: session.user.isAdmin
-        ? undefined
-        : { userEmail: session.user.email ?? "__none__" },
+        ? filters
+        : {
+            ...filters,
+            userEmail: session.user.email ?? "__none__",
+          },
       orderBy: { createdAt: "desc" },
+      take,
     });
 
     const response = new NextResponse(

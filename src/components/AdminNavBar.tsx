@@ -2,6 +2,7 @@
 
 import { signOut, useSession } from "next-auth/react";
 import {
+  BarChart3,
   Calculator,
   ClipboardList,
   ExternalLink,
@@ -15,6 +16,7 @@ import { usePathname } from "next/navigation";
 const links = [
   { href: "/admin/orders", label: "Órdenes", icon: ClipboardList },
   { href: "/admin/register", label: "Caja", icon: Calculator },
+  { href: "/admin/stats", label: "Estadísticas", icon: BarChart3 },
   { href: "/admin/products", label: "Productos", icon: UtensilsCrossed },
   { href: "/admin/feedback", label: "Comentarios", icon: MessageSquareHeart },
 ];
@@ -23,6 +25,8 @@ const AdminNavBar = () => {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const initial = session?.user?.email?.charAt(0).toUpperCase() ?? "A";
+
+  if (pathname === "/admin/register") return null;
 
   return (
     <header className="border-b border-tonel-deep/60 bg-tonel text-cream">
