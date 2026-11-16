@@ -12,6 +12,7 @@ import {
   Ban,
   Banknote,
   CheckCircle2,
+  ExternalLink,
   Globe,
   History,
   Loader2,
@@ -847,13 +848,22 @@ const AdminRegisterPage = () => {
           )}
         </div>
 
-        <Link
-          href="/admin/orders"
-          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-tonel/15 bg-white px-2.5 py-1.5 text-[10px] font-bold text-tonel transition hover:bg-sand"
-        >
-          Sala
-          <ArrowUpRight className="h-3 w-3" />
-        </Link>
+        <div className="flex shrink-0 items-center gap-1">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1 rounded-full border border-tonel/15 bg-white px-2.5 py-1.5 text-[10px] font-bold text-tonel transition hover:bg-sand"
+          >
+            Sitio
+            <ExternalLink className="h-3 w-3" />
+          </Link>
+          <Link
+            href="/admin/orders"
+            className="inline-flex items-center gap-1 rounded-full border border-tonel/15 bg-white px-2.5 py-1.5 text-[10px] font-bold text-tonel transition hover:bg-sand"
+          >
+            Sala
+            <ArrowUpRight className="h-3 w-3" />
+          </Link>
+        </div>
       </section>
 
       <div className="mt-3 grid min-h-0 flex-1 items-stretch gap-3 md:grid-cols-[minmax(0,1fr)_340px] lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_380px]">

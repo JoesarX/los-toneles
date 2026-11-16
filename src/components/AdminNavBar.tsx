@@ -49,9 +49,12 @@ const AdminNavBar = () => {
           <div className="flex items-center gap-2">
             <Link
               href="/"
-              className="hidden items-center gap-2 rounded-full border border-cream/15 px-3 py-2 text-xs font-semibold text-cream/75 transition hover:border-cream/40 hover:text-cream sm:inline-flex"
+              className="inline-flex items-center gap-1.5 rounded-full border border-cream/15 px-2.5 py-2 text-[11px] font-semibold text-cream/75 transition hover:border-cream/40 hover:text-cream sm:gap-2 sm:px-3 sm:text-xs"
+              aria-label="Ver sitio"
+              title="Ver sitio"
             >
-              Ver sitio
+              <span className="sm:hidden">Sitio</span>
+              <span className="hidden sm:inline">Ver sitio</span>
               <ExternalLink className="h-3.5 w-3.5" />
             </Link>
             {status === "loading" ? (
@@ -59,7 +62,7 @@ const AdminNavBar = () => {
             ) : (
               <>
                 <span
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-cream/10 text-xs font-bold text-amber"
+                  className="hidden h-8 w-8 items-center justify-center rounded-full bg-cream/10 text-xs font-bold text-amber sm:flex"
                   title={session?.user?.email ?? "Administrador"}
                 >
                   {initial}
