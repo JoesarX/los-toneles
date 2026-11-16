@@ -34,6 +34,15 @@ export const toProduct = (row: Product): ProductType => {
 
 const orderBy = [{ catSlug: "asc" as const }, { title: "asc" as const }];
 
+export async function getVisibleProducts(): Promise<ProductType[]> {
+  const products = await prisma.product.findMany({
+    where: { isVisible: true },
+    orderBy,
+  });
+
+  return products.map(toProduct);
+}
+
 export async function getFeaturedProducts(limit = 6): Promise<ProductType[]> {
   const featured = await prisma.product.findMany({
     where: { isVisible: true, isFeatured: true },

@@ -1,3 +1,4 @@
+import FavoriteButton from "@/components/site/FavoriteButton";
 import Price from "@/components/site/Price";
 import ProductCard from "@/components/site/ProductCard";
 import { getCategoryBySlug } from "@/data/categories";
@@ -123,9 +124,16 @@ const SingleProductPage = async ({ params }: Props) => {
               </span>
             </div>
 
-            <h1 className="mt-4 text-balance font-display text-4xl font-semibold leading-[1.05] text-tonel sm:text-5xl">
-              {product.title}
-            </h1>
+            <div className="mt-4 flex items-start justify-between gap-4">
+              <h1 className="text-balance font-display text-4xl font-semibold leading-[1.05] text-tonel sm:text-5xl">
+                {product.title}
+              </h1>
+              <FavoriteButton
+                productId={product.id}
+                productTitle={product.title}
+                className="mt-1 shrink-0"
+              />
+            </div>
             <p className="mt-4 text-pretty text-base leading-relaxed text-espresso/70">
               {product.desc}
             </p>

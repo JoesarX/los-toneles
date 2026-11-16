@@ -1,6 +1,11 @@
 "use client";
 
-import type { OrderType } from "@/types/types";
+import type {
+  CartItemType,
+  OrderType,
+  ProductType,
+} from "@/types/types";
+import { useCartStore } from "@/utils/store";
 import { useSession } from "next-auth/react";
 import {
   ArrowRight,
@@ -11,12 +16,14 @@ import {
   Loader2,
   PackageOpen,
   ReceiptText,
+  RotateCcw,
   ShoppingBag,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 const formatMoney = (value: number) => `L. ${Number(value).toFixed(2)}`;
 
@@ -56,9 +63,11 @@ const getStatus = (status: string) =>
 const OrdersPage = () => {
   const { status } = useSession();
   const router = useRouter();
+  const addToCart = useCartStore((state) => state.addToCart);
   const [orders, setOrders] = useState<OrderType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [repeatingId, setRepeatingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -102,6 +111,90 @@ const OrdersPage = () => {
       window.clearInterval(interval);
     };
   }, [status, router]);
+
+  const repeatOrder = async (order: OrderType) => {
+    const orderItems = order.products ?? [];
+    if (orderItems.length === 0) {
+      toast.error("Este pedido no tiene artículos para repetir.");
+      return;
+    }
+
+    setRepeatingId(order.id);
+
+    try {
+      const response = await fetch("/api/products", { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error("No pudimos consultar el menú.");
+      }
+
+      const catalog: ProductType[] = await response.json();
+      const catalogById = new Map(
+        catalog.map((product) => [product.id, product])
+      );
+      const itemsToAdd: CartItemType[] = [];
+      const unavailable: string[] = [];
+
+      for (const item of orderItems) {
+        const product = catalogById.get(item.id);
+        if (!product || product.isSoldOut) {
+          unavailable.push(item.title);
+          continue;
+        }
+
+        let unitPrice = product.price;
+        let optionTitle: string | undefined;
+
+        if (item.optionTitle) {
+          const option = product.options?.find(
+            (productOption) => productOption.title === item.optionTitle
+          );
+          if (!option) {
+            unavailable.push(item.title);
+            continue;
+          }
+          unitPrice = option.additionalPrice;
+          optionTitle = option.title;
+        }
+
+        const quantity =
+          Number.isFinite(Number(item.quantity)) && Number(item.quantity) > 0
+            ? Math.floor(Number(item.quantity))
+            : 1;
+
+        itemsToAdd.push({
+          id: product.id,
+          title: product.title,
+          img: product.img,
+          price: unitPrice,
+          subtotal: unitPrice * quantity,
+          quantity,
+          ...(optionTitle ? { optionTitle } : {}),
+        });
+      }
+
+      if (itemsToAdd.length === 0) {
+        toast.error("Los artículos de este pedido no están disponibles hoy.");
+        return;
+      }
+
+      itemsToAdd.forEach(addToCart);
+
+      if (unavailable.length > 0) {
+        toast.warning(
+          `Agregamos el pedido. No disponibles: ${unavailable.join(", ")}.`
+        );
+      } else {
+        toast.success("Pedido agregado al carrito.");
+      }
+
+      router.push("/cart");
+    } catch (repeatError) {
+      console.error(repeatError);
+      toast.error("No pudimos repetir el pedido. Intenta de nuevo.");
+    } finally {
+      setRepeatingId(null);
+    }
+  };
 
   if (status === "loading") {
     return (
@@ -309,10 +402,27 @@ const OrdersPage = () => {
                         {formatMoney(order.price)}
                       </p>
                     </div>
-                    <p className="inline-flex items-center gap-2 text-xs font-medium text-olive">
-                      <Banknote className="h-4 w-4" />
-                      Pago en efectivo
-                    </p>
+                    <div className="space-y-3">
+                      <p className="inline-flex items-center gap-2 text-xs font-medium text-olive">
+                        <Banknote className="h-4 w-4" />
+                        Pago en efectivo
+                      </p>
+                      {products.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => void repeatOrder(order)}
+                          disabled={repeatingId === order.id}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-terracotta px-4 py-2.5 text-xs font-bold text-white transition hover:bg-terracotta-deep disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {repeatingId === order.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <RotateCcw className="h-3.5 w-3.5" />
+                          )}
+                          Repetir pedido
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </article>

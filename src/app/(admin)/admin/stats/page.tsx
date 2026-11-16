@@ -151,7 +151,7 @@ const SectionCard = ({
   className?: string;
 }) => (
   <section
-    className={`rounded-3xl border border-sand bg-white/75 p-4 shadow-sm sm:p-5 ${className}`}
+    className={`min-w-0 rounded-3xl border border-sand bg-white/75 p-4 shadow-sm sm:p-5 ${className}`}
   >
     <div>
       <h2 className="font-display text-xl font-semibold text-tonel">{title}</h2>
@@ -167,27 +167,37 @@ const EmptyBlock = ({ children }: { children: React.ReactNode }) => (
   </p>
 );
 
+const compactTimelineLabel = (label: string) => {
+  const parts = label.trim().split(/\s+/);
+  const lastPart = parts[parts.length - 1] ?? "";
+  return /^\d{1,2}:\d{2}$/.test(lastPart) ? lastPart : label;
+};
+
 const TimelineChart = ({ data }: { data: StatsResponse }) => {
   const max = Math.max(...data.timeline.map((point) => point.revenue), 1);
   const labelStep = Math.max(1, Math.ceil(data.timeline.length / 12));
 
   return (
-    <div>
-      <div className="flex items-center justify-between gap-3">
+    <div className="min-w-0">
+      <div className="flex items-start justify-between gap-3">
         <p className="text-[11px] font-semibold text-espresso/45">
           Ingresos por periodo
         </p>
-        <p className="text-[11px] font-bold text-tonel">
+        <p className="shrink-0 text-right text-[11px] font-bold text-tonel">
           {formatMoney(data.summary.revenue)}
         </p>
       </div>
-      <div className="no-scrollbar mt-4 overflow-x-auto pb-1">
+      <div className="no-scrollbar mt-4 min-w-0 overflow-x-auto pb-1">
         <div className="flex h-56 min-w-full items-end gap-1">
           {data.timeline.map((point, index) => {
             const height =
               point.revenue > 0
                 ? Math.max((point.revenue / max) * 100, 3)
                 : 1;
+            const showLabel =
+              index % labelStep === 0 ||
+              index === data.timeline.length - 1;
+
             return (
               <div
                 key={point.key}
@@ -206,11 +216,8 @@ const TimelineChart = ({ data }: { data: StatsResponse }) => {
                     )} · ${point.orders} órdenes`}
                   />
                 </div>
-                <span className="h-4 text-[9px] font-semibold text-espresso/40">
-                  {index % labelStep === 0 ||
-                  index === data.timeline.length - 1
-                    ? point.label
-                    : ""}
+                <span className="flex h-4 w-full items-center justify-center overflow-hidden whitespace-nowrap text-[9px] font-semibold text-espresso/40">
+                  {showLabel ? compactTimelineLabel(point.label) : ""}
                 </span>
               </div>
             );

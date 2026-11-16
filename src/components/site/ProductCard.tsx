@@ -3,6 +3,7 @@ import type { ProductType } from "@/types/types";
 import { ArrowUpRight, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import FavoriteButton from "./FavoriteButton";
 
 type Props = {
   product: ProductType;
@@ -16,6 +17,11 @@ const ProductCard = ({ product, priority = false }: Props) => {
         product.isSoldOut ? "opacity-80" : ""
       }`}
     >
+      <FavoriteButton
+        productId={product.id}
+        productTitle={product.title}
+        className="absolute right-4 top-4 z-10"
+      />
       <Link href={`/product/${product.id}`} className="flex h-full flex-col">
         <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-sand/70 via-cream to-sand/40">
           {product.img ? (
@@ -40,10 +46,6 @@ const ProductCard = ({ product, priority = false }: Props) => {
             </span>
           )}
 
-          <span className="absolute right-4 top-4 rounded-full bg-tonel/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-cream">
-            {product.catSlug}
-          </span>
-
           {product.isSoldOut && (
             <span className="absolute inset-x-4 bottom-4 rounded-full bg-terracotta/95 px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-wide text-white shadow-sm backdrop-blur">
               Agotado por hoy
@@ -52,7 +54,10 @@ const ProductCard = ({ product, priority = false }: Props) => {
         </div>
 
         <div className="flex flex-1 flex-col p-6">
-          <h3 className="font-display text-2xl font-semibold leading-tight text-tonel">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-terracotta">
+            {product.catSlug}
+          </p>
+          <h3 className="mt-1.5 font-display text-2xl font-semibold leading-tight text-tonel">
             {product.title}
           </h3>
           <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-espresso/65">

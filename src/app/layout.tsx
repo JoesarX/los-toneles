@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Manrope } from "next/font/google";
 import AuthProvider from "@/components/AuthProvider";
+import PwaRegister from "@/components/PwaRegister";
 import QueryProvider from "@/components/QueryProvider";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -40,6 +41,23 @@ export const metadata: Metadata = {
     "pastelitos",
     "restaurante Honduras",
   ],
+  manifest: "/manifest.webmanifest",
+  applicationName: "Los Toneles",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Los Toneles",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icons/apple-touch-icon.png",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     title: "Los Toneles · Comida típica de Tegucigalpa",
     description:
@@ -71,6 +89,7 @@ export default function RootLayout({
         <AuthProvider>
           <QueryProvider>{children}</QueryProvider>
         </AuthProvider>
+        <PwaRegister />
         <ToastContainer
           position="bottom-right"
           theme="light"

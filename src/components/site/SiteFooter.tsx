@@ -2,6 +2,7 @@ import { sitesMenu } from "@/data/navigation";
 import { site } from "@/data/site";
 import { ArrowUpRight, Clock, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
+import InstallPwaButton from "./InstallPwaButton";
 
 const SiteFooter = () => {
   return (
@@ -99,7 +100,10 @@ const SiteFooter = () => {
             © {new Date().getFullYear()} Los Toneles. Todos los derechos
             reservados.
           </p>
-          <p>Hecho con cariño en Tegucigalpa, Honduras.</p>
+          <div className="flex flex-col items-center gap-2 sm:flex-row sm:gap-4">
+            <InstallPwaButton />
+            <p>Hecho con cariño en Tegucigalpa, Honduras.</p>
+          </div>
         </div>
       </div>
     </footer>

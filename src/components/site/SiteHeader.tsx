@@ -12,6 +12,7 @@ import {
   MapPin,
   Menu as MenuIcon,
   Phone,
+  ReceiptText,
   ShoppingBag,
   User,
   X,
@@ -24,6 +25,7 @@ import { useEffect, useState } from "react";
 const links = [
   { href: "/", label: "Inicio" },
   { href: "/menu", label: "Menú" },
+  { href: "/favorites", label: "Favoritos" },
   { href: "/contact-us", label: "Contacto" },
 ];
 
@@ -109,7 +111,7 @@ const SiteHeader = () => {
         <div className="mx-auto flex max-w-7xl items-center justify-center gap-3 px-4 py-1.5 text-center text-[10px] font-medium tracking-wide sm:justify-between sm:px-6 sm:text-[11px] lg:px-8">
           <p className="inline-flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-amber" />
-            Pedidos en línea muy pronto · Visítanos en el local
+            Pide en línea y recoge en el local
           </p>
           <a
             href={site.phoneHref}
@@ -163,9 +165,16 @@ const SiteHeader = () => {
           <div className="hidden items-center gap-3 lg:flex">
             {session ? (
               <div className="flex items-center gap-2">
+                <Link
+                  href="/orders"
+                  className="inline-flex items-center gap-2 rounded-full border border-tonel/20 px-3 py-2 text-sm font-semibold text-tonel transition hover:bg-sand"
+                >
+                  <ReceiptText className="h-4 w-4" />
+                  Mis pedidos
+                </Link>
                 {isAdmin && (
                   <Link
-                    href="/admin/products"
+                    href="/admin/orders"
                     className="inline-flex items-center gap-2 rounded-full border border-tonel/20 px-3 py-2 text-sm font-semibold text-tonel transition hover:bg-sand"
                   >
                     <LayoutDashboard className="h-4 w-4" />
@@ -353,9 +362,19 @@ const SiteHeader = () => {
                 Iniciar sesión
               </Link>
             )}
+            {session && (
+              <Link
+                href="/orders"
+                onClick={() => setOpen(false)}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-tonel/20 px-4 py-3 text-sm font-semibold text-tonel"
+              >
+                <ReceiptText className="h-4 w-4" />
+                Mis pedidos
+              </Link>
+            )}
             {isAdmin && (
               <Link
-                href="/admin/products"
+                href="/admin/orders"
                 onClick={() => setOpen(false)}
                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-tonel/20 px-4 py-3 text-sm font-semibold text-tonel"
               >
