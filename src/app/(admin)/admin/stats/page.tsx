@@ -14,6 +14,7 @@ import {
   BarChart3,
   CalendarDays,
   Clock,
+  Download,
   Globe,
   Loader2,
   Package,
@@ -669,6 +670,13 @@ const AdminStatsPage = () => {
     refetchOnWindowFocus: true,
   });
 
+  const exportParams = new URLSearchParams();
+  if (data?.range.from) exportParams.set("from", data.range.from);
+  if (data?.range.to) exportParams.set("to", data.range.to);
+  const exportHref = data
+    ? `/api/admin/export?${exportParams.toString()}`
+    : null;
+
   return (
     <div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -685,16 +693,32 @@ const AdminStatsPage = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="inline-flex w-fit items-center gap-2 rounded-full border border-tonel/15 bg-white/70 px-4 py-2.5 text-xs font-bold text-tonel transition hover:bg-sand"
-        >
-          <RefreshCw
-            className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
-          />
-          Actualizar
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {exportHref ? (
+            <a
+              href={exportHref}
+              className="inline-flex w-fit items-center gap-2 rounded-full border border-tonel/15 bg-white/70 px-4 py-2.5 text-xs font-bold text-tonel transition hover:bg-sand"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Exportar CSV
+            </a>
+          ) : (
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-tonel/10 bg-white/40 px-4 py-2.5 text-xs font-bold text-tonel/35">
+              <Download className="h-3.5 w-3.5" />
+              Exportar CSV
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="inline-flex w-fit items-center gap-2 rounded-full border border-tonel/15 bg-white/70 px-4 py-2.5 text-xs font-bold text-tonel transition hover:bg-sand"
+          >
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
+            />
+            Actualizar
+          </button>
+        </div>
       </div>
 
       <div className="mt-6 rounded-3xl border border-sand bg-white/75 p-3 shadow-sm">

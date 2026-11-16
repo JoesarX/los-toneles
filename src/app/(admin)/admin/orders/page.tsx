@@ -10,6 +10,7 @@ import type { OrderType } from "@/types/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Banknote,
+  CalendarClock,
   Check,
   Clock,
   Globe,
@@ -119,6 +120,19 @@ const OrderCard = ({
           {isRegister ? "Caja" : "En línea"}
         </span>
       </div>
+
+      {order.scheduledFor && (
+        <p className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-terracotta/10 px-2.5 py-1.5 text-[10px] font-bold text-terracotta-deep">
+          <CalendarClock className="h-3.5 w-3.5" />
+          Programado{" "}
+          {new Date(order.scheduledFor).toLocaleString("es-HN", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+      )}
 
       <div className="mt-3 space-y-1.5 border-t border-sand/70 pt-3">
         {visibleItems.length > 0 ? (

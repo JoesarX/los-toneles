@@ -5,7 +5,9 @@ import { useSession } from "next-auth/react";
 import {
   ArrowRight,
   Banknote,
+  CalendarClock,
   CalendarDays,
+  Check,
   Loader2,
   PackageOpen,
   ReceiptText,
@@ -20,13 +22,30 @@ const formatMoney = (value: number) => `L. ${Number(value).toFixed(2)}`;
 
 const statusStyles: Record<string, { label: string; className: string }> = {
   pending: { label: "Pendiente", className: "bg-amber/20 text-espresso" },
-  preparing: {
-    label: "En preparación",
+  ready: {
+    label: "Listo para recoger",
     className: "bg-terracotta/15 text-terracotta-deep",
   },
-  delivered: { label: "Entregado", className: "bg-olive/15 text-olive" },
+  paid: { label: "Entregado", className: "bg-olive/15 text-olive" },
   cancelled: { label: "Cancelado", className: "bg-red-100 text-red-700" },
 };
+
+const trackingSteps = ["Recibido", "Listo", "Entregado"];
+
+const stepIndexFor = (status: string) => {
+  if (status === "ready") return 1;
+  if (status === "paid") return 2;
+  return 0;
+};
+
+const scheduleLabel = (value: Date | string) =>
+  new Date(value).toLocaleString("es-HN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 const getStatus = (status: string) =>
   statusStyles[status.toLowerCase()] ?? {
@@ -76,9 +95,11 @@ const OrdersPage = () => {
     };
 
     fetchOrders();
+    const interval = window.setInterval(fetchOrders, 10000);
 
     return () => {
       active = false;
+      window.clearInterval(interval);
     };
   }, [status, router]);
 
@@ -138,8 +159,8 @@ const OrdersPage = () => {
             Aún no tienes pedidos
           </h2>
           <p className="mt-2 max-w-md text-sm leading-relaxed text-espresso/60">
-            Muy pronto podrás ordenar en línea. Mientras tanto, visítanos y
-            disfruta de tu platillo favorito en el local.
+            Explora el menú, arma tu pedido y recógelo en el local. También
+            puedes programar la hora de entrega.
           </p>
           <Link
             href="/menu"
@@ -151,14 +172,16 @@ const OrdersPage = () => {
         </div>
       ) : (
         <div className="mt-8 space-y-4">
-          {orders.map((order) => {
+          {orders.map((order, index) => {
             const status = getStatus(order.status);
             const products = order.products ?? [];
+            const stepIndex = stepIndexFor(order.status);
 
             return (
               <article
                 key={order.id}
-                className="overflow-hidden rounded-3xl border border-sand bg-white/70 shadow-soft"
+                className="animate-fade-up overflow-hidden rounded-3xl border border-sand bg-white/70 shadow-soft"
+                style={{ animationDelay: `${Math.min(index, 8) * 70}ms` }}
               >
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-sand bg-sand/30 px-5 py-4 sm:px-6">
                   <div className="flex flex-wrap items-center gap-4">
@@ -174,6 +197,12 @@ const OrdersPage = () => {
                         year: "numeric",
                       })}
                     </span>
+                    {order.scheduledFor && (
+                      <span className="inline-flex items-center gap-2 rounded-full bg-terracotta/10 px-3 py-1 text-[11px] font-bold text-terracotta-deep">
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        {scheduleLabel(order.scheduledFor)}
+                      </span>
+                    )}
                   </div>
                   <span
                     className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${status.className}`}
@@ -181,6 +210,53 @@ const OrdersPage = () => {
                     {status.label}
                   </span>
                 </div>
+
+                {order.status !== "cancelled" && (
+                  <div className="border-b border-sand/70 bg-white/40 px-5 py-3 sm:px-6">
+                    <div className="flex items-center gap-2">
+                      {trackingSteps.map((step, stepPosition) => {
+                        const done = stepPosition <= stepIndex;
+                        const current = stepPosition === stepIndex;
+                        return (
+                          <div
+                            key={step}
+                            className="flex flex-1 items-center gap-2"
+                          >
+                            <span
+                              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition ${
+                                done
+                                  ? "bg-olive text-white"
+                                  : "bg-sand text-espresso/35"
+                              } ${current ? "animate-pulse" : ""}`}
+                            >
+                              {done ? (
+                                <Check className="h-3 w-3" />
+                              ) : (
+                                stepPosition + 1
+                              )}
+                            </span>
+                            <span
+                              className={`hidden text-[10px] font-semibold sm:block ${
+                                done ? "text-olive" : "text-espresso/35"
+                              }`}
+                            >
+                              {step}
+                            </span>
+                            {stepPosition < trackingSteps.length - 1 && (
+                              <span
+                                className={`h-px flex-1 ${
+                                  stepPosition < stepIndex
+                                    ? "bg-olive/50"
+                                    : "bg-sand-deep"
+                                }`}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid gap-5 p-5 sm:p-6 md:grid-cols-[1fr_auto]">
                   <div className="space-y-3">
@@ -245,7 +321,8 @@ const OrdersPage = () => {
 
           <div className="flex flex-col items-center justify-between gap-4 rounded-3xl border border-sand bg-white/50 p-5 sm:flex-row">
             <p className="text-sm text-espresso/60">
-              Los pedidos en línea estarán disponibles muy pronto.
+              Los pedidos se preparan al momento y se pagan en efectivo al
+              recogerlos.
             </p>
             <Link
               href="/menu"

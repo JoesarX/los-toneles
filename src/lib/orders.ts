@@ -47,6 +47,7 @@ export const toOrderType = (order: Orders): OrderType => ({
     : [],
   status: order.status,
   createdAt: order.createdAt,
+  scheduledFor: order.scheduledFor,
   intent_id: order.intent_id ?? undefined,
   source: order.source,
   customerName: order.customerName,

@@ -95,6 +95,11 @@ const SingleProductPage = async ({ params }: Props) => {
                 Favorito de la casa
               </span>
             )}
+            {product.isSoldOut && (
+              <span className="absolute inset-x-5 bottom-5 rounded-full bg-terracotta/95 px-4 py-2 text-center text-xs font-bold uppercase tracking-wide text-white shadow-sm backdrop-blur">
+                Agotado por hoy
+              </span>
+            )}
           </div>
 
           <div className="lg:py-2">
@@ -107,8 +112,14 @@ const SingleProductPage = async ({ params }: Props) => {
                   {category.title}
                 </Link>
               )}
-              <span className="rounded-full bg-olive/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-olive">
-                Hecho al momento
+              <span
+                className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${
+                  product.isSoldOut
+                    ? "bg-terracotta/10 text-terracotta-deep"
+                    : "bg-olive/10 text-olive"
+                }`}
+              >
+                {product.isSoldOut ? "Agotado por hoy" : "Hecho al momento"}
               </span>
             </div>
 

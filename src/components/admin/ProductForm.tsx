@@ -35,6 +35,7 @@ const ProductForm = ({ mode, product }: Props) => {
   const [img, setImg] = useState(product?.img ?? "");
   const [isFeatured, setIsFeatured] = useState(product?.isFeatured ?? false);
   const [isVisible, setIsVisible] = useState(product?.isVisible ?? true);
+  const [isSoldOut, setIsSoldOut] = useState(product?.isSoldOut ?? false);
   const [options, setOptions] = useState<OptionInput[]>(product?.options ?? []);
   const [optionTitle, setOptionTitle] = useState("");
   const [optionPrice, setOptionPrice] = useState("");
@@ -153,6 +154,7 @@ const ProductForm = ({ mode, product }: Props) => {
             img: img.trim() || null,
             isFeatured,
             isVisible,
+            isSoldOut,
             options,
           }),
         }
@@ -448,6 +450,20 @@ const ProductForm = ({ mode, product }: Props) => {
                   type="checkbox"
                   checked={isFeatured}
                   onChange={(event) => setIsFeatured(event.target.checked)}
+                  className="h-5 w-5 accent-terracotta"
+                />
+              </label>
+              <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-sand bg-cream/50 px-4 py-3">
+                <div>
+                  <p className="text-sm font-bold text-tonel">Agotado</p>
+                  <p className="text-[11px] text-espresso/45">
+                    Se muestra en el menú, pero no se puede pedir.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isSoldOut}
+                  onChange={(event) => setIsSoldOut(event.target.checked)}
                   className="h-5 w-5 accent-terracotta"
                 />
               </label>

@@ -1,20 +1,42 @@
 "use client";
 
+import {
+  BUSINESS_HOURS_LABEL,
+  BUSINESS_TIME_ZONE,
+  CLOSED_ORDER_MESSAGE,
+  isWithinBusinessHours,
+  nextBusinessOpening,
+  SCHEDULE_OUTSIDE_HOURS_MESSAGE,
+} from "@/lib/business-hours";
 import { useCartHydrated } from "@/utils/useCartHydrated";
 import { useCartStore } from "@/utils/store";
 import {
   ArrowRight,
   Banknote,
+  CalendarClock,
+  Loader2,
   MessageSquareHeart,
   Minus,
   Plus,
   ShoppingBag,
   Trash2,
+  UserRound,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "react-toastify";
 
 const formatMoney = (value: number) => `L. ${Number(value).toFixed(2)}`;
+
+const toDateTimeInput = (date: Date) => {
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60 * 1000)
+    .toISOString()
+    .slice(0, 16);
+};
 
 const CartPage = () => {
   const products = useCartStore((state) => state.products);
@@ -25,6 +47,113 @@ const CartPage = () => {
   const minusOne = useCartStore((state) => state.minusOne);
   const clearCart = useCartStore((state) => state.clearCart);
   const mounted = useCartHydrated();
+  const { status: authStatus } = useSession();
+  const router = useRouter();
+  const initialBusinessCheck = useRef(false);
+  const [business, setBusiness] = useState<{
+    isOpen: boolean;
+    nextOpening: Date;
+  } | null>(null);
+  const [customerName, setCustomerName] = useState("");
+  const [scheduleMode, setScheduleMode] = useState<"asap" | "later">("asap");
+  const [scheduledFor, setScheduledFor] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const updateBusinessState = () => {
+      const now = new Date();
+      const isOpen = isWithinBusinessHours(now);
+      setBusiness({ isOpen, nextOpening: nextBusinessOpening(now) });
+
+      if (!isOpen) {
+        setScheduleMode("later");
+        setScheduledFor(
+          (current) =>
+            current || toDateTimeInput(nextBusinessOpening(now))
+        );
+      } else if (!initialBusinessCheck.current) {
+        setScheduleMode("asap");
+      }
+
+      initialBusinessCheck.current = true;
+    };
+
+    const initial = window.setTimeout(updateBusinessState, 0);
+    const interval = window.setInterval(updateBusinessState, 60000);
+
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+    };
+  }, []);
+
+  const handleCheckout = async () => {
+    if (authStatus !== "authenticated") {
+      toast.info("Inicia sesión para confirmar tu pedido.");
+      router.push("/login");
+      return;
+    }
+
+    const name = customerName.trim();
+    if (name.length < 2) {
+      toast.error("Escribe tu nombre para identificar el pedido.");
+      return;
+    }
+
+    if (business && !business.isOpen && scheduleMode !== "later") {
+      toast.info(CLOSED_ORDER_MESSAGE);
+      setScheduleMode("later");
+      return;
+    }
+
+    let scheduledIso: string | undefined;
+    if (scheduleMode === "later") {
+      const date = new Date(scheduledFor);
+      if (!scheduledFor || !Number.isFinite(date.getTime())) {
+        toast.error("Selecciona una hora para tu pedido.");
+        return;
+      }
+      if (date.getTime() <= Date.now()) {
+        toast.error("La hora programada debe ser en el futuro.");
+        return;
+      }
+      if (!isWithinBusinessHours(date)) {
+        toast.error(SCHEDULE_OUTSIDE_HOURS_MESSAGE);
+        return;
+      }
+      scheduledIso = date.toISOString();
+    }
+
+    setSubmitting(true);
+
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          price: totalPrice,
+          products,
+          customerName: name,
+          ...(scheduledIso ? { scheduledFor: scheduledIso } : {}),
+        }),
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.message ?? "No se pudo crear el pedido.");
+      }
+
+      clearCart();
+      toast.success("Pedido enviado. Te esperamos.");
+      router.push("/orders");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo crear el pedido."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
@@ -206,12 +335,105 @@ const CartPage = () => {
               </p>
             </div>
 
+            <div className="mt-5 space-y-3">
+              {business && !business.isOpen && (
+                <div className="rounded-2xl border border-amber/45 bg-amber/10 p-3.5">
+                  <p className="inline-flex items-center gap-1.5 text-xs font-bold text-espresso">
+                    <CalendarClock className="h-4 w-4 text-terracotta" />
+                    Estamos cerrados
+                  </p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-espresso/65">
+                    Solo puedes dejar tu pedido programado. Atendemos{" "}
+                    {BUSINESS_HOURS_LABEL}.
+                  </p>
+                  <p className="mt-1 text-[11px] font-semibold text-tonel">
+                    Próxima opción:{" "}
+                    {business.nextOpening.toLocaleString("es-HN", {
+                      timeZone: BUSINESS_TIME_ZONE,
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              )}
+
+              <label className="block">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-espresso/45">
+                  <UserRound className="h-3.5 w-3.5" />
+                  Nombre para el pedido
+                </span>
+                <input
+                  value={customerName}
+                  onChange={(event) => setCustomerName(event.target.value)}
+                  placeholder="Ej. María López"
+                  className="mt-1 w-full rounded-xl border border-sand bg-white px-3 py-2.5 text-sm text-espresso outline-none transition placeholder:text-espresso/30 focus:border-terracotta"
+                />
+              </label>
+
+              <div>
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-espresso/45">
+                  <CalendarClock className="h-3.5 w-3.5" />
+                  Hora de recogida
+                </span>
+                <div className="mt-1 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setScheduleMode("asap")}
+                    disabled={business?.isOpen === false}
+                    title={
+                      business?.isOpen === false
+                        ? "Solo pedidos programados fuera de horario"
+                        : undefined
+                    }
+                    className={`rounded-xl border px-3 py-2 text-xs font-bold transition ${
+                      scheduleMode === "asap" && business?.isOpen !== false
+                        ? "border-tonel bg-tonel text-cream"
+                        : "border-sand bg-white text-tonel hover:bg-sand/60"
+                    } disabled:cursor-not-allowed disabled:border-sand disabled:bg-sand/40 disabled:text-espresso/35 disabled:hover:bg-sand/40`}
+                  >
+                    Lo antes posible
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setScheduleMode("later")}
+                    className={`rounded-xl border px-3 py-2 text-xs font-bold transition ${
+                      scheduleMode === "later"
+                        ? "border-tonel bg-tonel text-cream"
+                        : "border-sand bg-white text-tonel hover:bg-sand/60"
+                    }`}
+                  >
+                    Programar
+                  </button>
+                </div>
+                <p className="mt-1 text-[10px] text-espresso/45">
+                  Horario: {BUSINESS_HOURS_LABEL}.
+                </p>
+                {scheduleMode === "later" && (
+                  <input
+                    type="datetime-local"
+                    value={scheduledFor}
+                    onChange={(event) => setScheduledFor(event.target.value)}
+                    className="mt-2 w-full rounded-xl border border-sand bg-white px-3 py-2.5 text-xs font-semibold text-tonel outline-none focus:border-terracotta"
+                  />
+                )}
+              </div>
+            </div>
+
             <button
               type="button"
-              disabled
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-tonel/40 px-6 py-4 text-sm font-bold text-cream"
+              onClick={() => void handleCheckout()}
+              disabled={submitting}
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-terracotta px-6 py-4 text-sm font-bold text-white shadow-soft transition hover:bg-terracotta-deep disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Pedidos en línea muy pronto
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ShoppingBag className="h-4 w-4" />
+              )}
+              {submitting ? "Enviando pedido..." : "Confirmar pedido"}
             </button>
 
             <Link

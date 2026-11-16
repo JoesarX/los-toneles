@@ -23,6 +23,7 @@ export type ProductType = {
     price: number;
     isFeatured: boolean;
     isVisible: boolean;
+    isSoldOut: boolean;
     catSlug: string;
     options?: { title: string; additionalPrice: number }[];
 };
@@ -34,6 +35,7 @@ export type OrderType = {
     products: CartItemType[];
     status: string;
     createdAt: Date;
+    scheduledFor?: Date | string | null;
     intent_id?: string;
     source?: string;
     customerName?: string | null;

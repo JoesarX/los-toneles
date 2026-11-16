@@ -26,6 +26,7 @@ export const toProduct = (row: Product): ProductType => {
     price: Number(row.price),
     isFeatured: row.isFeatured,
     isVisible: row.isVisible,
+    isSoldOut: row.isSoldOut,
     catSlug: row.catSlug,
     options,
   };

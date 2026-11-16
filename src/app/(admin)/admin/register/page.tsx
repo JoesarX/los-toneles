@@ -2,25 +2,41 @@
 
 import { categories } from "@/data/categories";
 import type { CartItemType, OrderType, ProductType } from "@/types/types";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   ArrowUpRight,
+  Ban,
   Banknote,
   CheckCircle2,
   Globe,
+  History,
   Loader2,
   Minus,
+  Pencil,
   Plus,
   RotateCcw,
   Search,
   ShoppingBag,
   Store,
   Trash2,
+  Volume2,
+  VolumeX,
+  Wallet,
   X,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "react-toastify";
 
 const formatMoney = (value: number) => `L. ${Number(value).toFixed(2)}`;
@@ -30,6 +46,42 @@ const orderTime = (value: Date | string) =>
     hour: "2-digit",
     minute: "2-digit",
   });
+
+const orderDateTime = (value: Date | string) =>
+  new Date(value).toLocaleString("es-HN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+const scheduledLabel = (value: Date | string) =>
+  new Date(value).toLocaleString("es-HN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+const statusLabel: Record<string, string> = {
+  pending: "Pendiente",
+  ready: "Listo",
+  paid: "Pagado",
+  cancelled: "Cancelado",
+};
+
+type CashSessionSummary = {
+  id: string;
+  startTime: string;
+  startingCash: number;
+  totalSales: number;
+  orders: number;
+  expectedCash: number;
+  cashCollected: number;
+  changeGiven: number;
+  notes: string | null;
+};
 
 const IncomingOrderToast = ({ order }: { order: OrderType }) => {
   const itemCount = (order.products ?? []).reduce(
@@ -80,7 +132,9 @@ const categoryOrder = new Map(
 const HONDURAS_BILLS = [1, 5, 10, 20, 50, 100, 500];
 
 const AdminRegisterPage = () => {
+  const queryClient = useQueryClient();
   const searchRef = useRef<HTMLInputElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("Todo");
   const [cart, setCart] = useState<CartItemType[]>([]);
@@ -90,6 +144,76 @@ const AdminRegisterPage = () => {
   const [cashGiven, setCashGiven] = useState("");
   const [billCounts, setBillCounts] = useState<Record<number, number>>({});
   const [lastOrder, setLastOrder] = useState<OrderType | null>(null);
+  const [editingOrder, setEditingOrder] = useState<OrderType | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyPendingId, setHistoryPendingId] = useState<string | null>(
+    null
+  );
+  const [cashOpen, setCashOpen] = useState(false);
+  const [cashStarting, setCashStarting] = useState("0");
+  const [cashCounted, setCashCounted] = useState("");
+  const [cashNotes, setCashNotes] = useState("");
+  const [cashSaving, setCashSaving] = useState(false);
+
+  const getAudioContext = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    if (!audioContextRef.current) {
+      audioContextRef.current = new window.AudioContext();
+    }
+    return audioContextRef.current;
+  }, []);
+
+  const playAlert = useCallback(() => {
+    if (!soundEnabled) return;
+
+    try {
+      const context = getAudioContext();
+      if (!context) return;
+      if (context.state === "suspended") {
+        void context.resume();
+      }
+
+      const start = context.currentTime + 0.01;
+      [0, 0.18].forEach((offset, index) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(
+          index === 0 ? 660 : 880,
+          start + offset
+        );
+        gain.gain.setValueAtTime(0.0001, start + offset);
+        gain.gain.exponentialRampToValueAtTime(
+          0.2,
+          start + offset + 0.025
+        );
+        gain.gain.exponentialRampToValueAtTime(
+          0.0001,
+          start + offset + 0.24
+        );
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(start + offset);
+        oscillator.stop(start + offset + 0.26);
+      });
+    } catch (error) {
+      console.warn("No se pudo reproducir la alerta.", error);
+    }
+  }, [getAudioContext, soundEnabled]);
+
+  useEffect(() => {
+    const unlock = () => {
+      try {
+        void getAudioContext()?.resume();
+      } catch {
+        // Audio is optional; ignore browser restrictions.
+      }
+    };
+
+    window.addEventListener("pointerdown", unlock, { once: true });
+    return () => window.removeEventListener("pointerdown", unlock);
+  }, [getAudioContext]);
 
   const {
     data: products = [],
@@ -126,6 +250,47 @@ const AdminRegisterPage = () => {
     refetchOnWindowFocus: true,
   });
 
+  const {
+    data: historyOrders = [],
+    isLoading: historyLoading,
+    refetch: refetchHistory,
+  } = useQuery<OrderType[]>({
+    queryKey: ["register-history"],
+    queryFn: async () => {
+      const response = await fetch("/api/orders?source=register&limit=40", {
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        throw new Error("No se pudo cargar el historial.");
+      }
+      return response.json();
+    },
+    enabled: historyOpen,
+    refetchInterval: historyOpen ? 30000 : false,
+    refetchOnWindowFocus: true,
+  });
+
+  const {
+    data: cashSession,
+    isLoading: cashLoading,
+    isError: cashError,
+    refetch: refetchCash,
+  } = useQuery<CashSessionSummary | null>({
+    queryKey: ["cash-session"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/cash-session", {
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        throw new Error("No se pudo consultar la caja.");
+      }
+      const data = await response.json();
+      return data.session ?? null;
+    },
+    enabled: cashOpen,
+    refetchOnMount: "always",
+  });
+
   const seenOnlineOrders = useRef<Set<string> | null>(null);
 
   useEffect(() => {
@@ -142,6 +307,10 @@ const AdminRegisterPage = () => {
       (order) => !seenOnlineOrders.current?.has(order.id)
     );
 
+    if (newOrders.length > 0) {
+      playAlert();
+    }
+
     newOrders.forEach((order) => {
       toast.info(<IncomingOrderToast order={order} />, {
         toastId: `online-order-${order.id}`,
@@ -153,7 +322,7 @@ const AdminRegisterPage = () => {
       ...seenOnlineOrders.current,
       ...currentIds,
     ]);
-  }, [onlineOrders, onlineOrdersLoaded]);
+  }, [onlineOrders, onlineOrdersLoaded, playAlert]);
 
   const openOnlineOrders = onlineOrders ?? [];
   const pendingOnlineOrders = openOnlineOrders.filter(
@@ -231,6 +400,10 @@ const AdminRegisterPage = () => {
         return matchesCategory && matchesSearch;
       })
       .sort((a, b) => {
+        if (a.isSoldOut !== b.isSoldOut) {
+          return a.isSoldOut ? 1 : -1;
+        }
+
         const categoryDifference =
           (categoryOrder.get(a.catSlug) ?? 99) -
           (categoryOrder.get(b.catSlug) ?? 99);
@@ -283,6 +456,10 @@ const AdminRegisterPage = () => {
   };
 
   const addProduct = (product: ProductType) => {
+    if (product.isSoldOut) {
+      toast.info(`${product.title} está agotado por hoy.`);
+      return;
+    }
     if (product.options && product.options.length > 0) {
       setOptionProduct(product);
       return;
@@ -320,28 +497,150 @@ const AdminRegisterPage = () => {
     setCashGiven("");
     setBillCounts({});
     setLastOrder(null);
+    setEditingOrder(null);
     setTimeout(() => searchRef.current?.focus(), 0);
+  };
+
+  const startEdit = (order: OrderType) => {
+    if (order.status !== "paid") {
+      toast.info("Solo puedes editar ventas pagadas.");
+      return;
+    }
+
+    const items = (order.products ?? []).map((item) => {
+      const quantity = Math.max(1, Number(item.quantity) || 1);
+      const price = Number(item.price) || 0;
+      const subtotal = Number(item.subtotal) || price * quantity;
+      return { ...item, quantity, price, subtotal };
+    });
+
+    if (items.length === 0) {
+      toast.info("Esta venta no tiene artículos para editar.");
+      return;
+    }
+
+    setEditingOrder(order);
+    setCart(items);
+    setCustomerName(order.customerName ?? "");
+    setNotes(order.notes ?? "");
+    setCashGiven(String(order.amountPaid ?? order.price));
+    setBillCounts({});
+    setLastOrder(null);
+    setHistoryOpen(false);
+    setTimeout(() => searchRef.current?.focus(), 0);
+  };
+
+  const updateHistoryStatus = async (
+    order: OrderType,
+    status: "cancelled" | "paid"
+  ) => {
+    setHistoryPendingId(order.id);
+    try {
+      const response = await fetch(`/api/orders/${order.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) {
+        throw new Error("No se pudo actualizar la venta.");
+      }
+      toast.success(
+        status === "cancelled" ? "Venta cancelada." : "Venta reactivada."
+      );
+      await refetchHistory();
+      queryClient.invalidateQueries({ queryKey: ["cash-session"] });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo actualizar."
+      );
+    } finally {
+      setHistoryPendingId(null);
+    }
+  };
+
+  const cancelSale = (order: OrderType) => {
+    if (
+      !window.confirm(
+        `¿Cancelar la venta #${order.id.slice(-5).toUpperCase()} por ${formatMoney(order.price)}?`
+      )
+    ) {
+      return;
+    }
+    void updateHistoryStatus(order, "cancelled");
+  };
+
+  const saveCash = async (action: "open" | "close") => {
+    setCashSaving(true);
+    try {
+      const response = await fetch("/api/admin/cash-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          action === "open"
+            ? { action, startingCash: Number(cashStarting) || 0 }
+            : {
+                action,
+                endingCash: Number(cashCounted),
+                notes: cashNotes,
+              }
+        ),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.message ?? "No se pudo actualizar la caja.");
+      }
+
+      toast.success(
+        action === "open" ? "Caja abierta." : "Caja cerrada."
+      );
+      setCashCounted("");
+      setCashNotes("");
+      if (action === "close") {
+        setCashOpen(false);
+      } else {
+        setCashStarting("0");
+        await refetchCash();
+      }
+      queryClient.invalidateQueries({ queryKey: ["cash-session"] });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo actualizar la caja."
+      );
+    } finally {
+      setCashSaving(false);
+    }
   };
 
   const submitOrder = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          price: total,
-          products: cart,
-          status: "paid",
-          source: "register",
-          customerName,
-          amountPaid: cashValue,
-          changeGiven: change,
-          notes,
-        }),
-      });
+      const payload = {
+        price: total,
+        products: cart,
+        customerName,
+        amountPaid: cashValue,
+        changeGiven: change,
+        notes,
+      };
+
+      const response = await fetch(
+        editingOrder ? `/api/orders/${editingOrder.id}` : "/api/orders",
+        {
+          method: editingOrder ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            editingOrder
+              ? payload
+              : { ...payload, status: "paid", source: "register" }
+          ),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("No se pudo registrar la venta.");
+        throw new Error(
+          editingOrder
+            ? "No se pudo actualizar la venta."
+            : "No se pudo registrar la venta."
+        );
       }
 
       return (await response.json()) as OrderType;
@@ -353,12 +652,26 @@ const AdminRegisterPage = () => {
       setNotes("");
       setCashGiven("");
       setBillCounts({});
-      toast.success("Venta registrada.");
+      setEditingOrder(null);
+      toast.success(
+        editingOrder ? "Venta actualizada." : "Venta registrada."
+      );
+      queryClient.invalidateQueries({ queryKey: ["register-history"] });
+      queryClient.invalidateQueries({ queryKey: ["cash-session"] });
     },
     onError: (error: Error) => {
       toast.error(error.message);
     },
   });
+
+  const countedCash =
+    cashCounted.trim() === "" ? null : Number(cashCounted);
+  const cashDifference =
+    cashSession &&
+    countedCash !== null &&
+    Number.isFinite(countedCash)
+      ? countedCash - cashSession.expectedCash
+      : null;
 
   return (
     <div className="md:-mx-6 md:-my-6 md:flex md:h-[100dvh] md:flex-col md:overflow-hidden md:px-4 md:py-3 lg:-mx-8 lg:px-6">
@@ -376,11 +689,53 @@ const AdminRegisterPage = () => {
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="hidden items-center gap-1.5 rounded-full border border-olive/20 bg-olive/10 px-3 py-1.5 text-[10px] font-semibold text-olive sm:inline-flex">
+        <div className="flex shrink-0 items-center gap-1.5">
+          <span className="hidden items-center gap-1.5 rounded-full border border-olive/20 bg-olive/10 px-3 py-1.5 text-[10px] font-semibold text-olive xl:inline-flex">
             <Banknote className="h-3.5 w-3.5" />
             Solo efectivo
           </span>
+          <button
+            type="button"
+            onClick={() => {
+              const next = !soundEnabled;
+              setSoundEnabled(next);
+              localStorage.setItem("tonel-pos-sound", next ? "on" : "off");
+              if (next) playAlert();
+            }}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${
+              soundEnabled
+                ? "border-olive/20 bg-olive/10 text-olive"
+                : "border-tonel/15 bg-white text-espresso/40"
+            }`}
+            title={soundEnabled ? "Silenciar alertas" : "Activar sonido"}
+            aria-label={
+              soundEnabled ? "Silenciar alertas" : "Activar sonido"
+            }
+          >
+            {soundEnabled ? (
+              <Volume2 className="h-4 w-4" />
+            ) : (
+              <VolumeX className="h-4 w-4" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-tonel/15 bg-white px-3 py-2 text-[11px] font-bold text-tonel transition hover:bg-sand"
+            title="Historial de ventas"
+          >
+            <History className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Historial</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setCashOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-tonel/15 bg-white px-3 py-2 text-[11px] font-bold text-tonel transition hover:bg-sand"
+            title="Cierre de caja"
+          >
+            <Wallet className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Caja</span>
+          </button>
           <Link
             href="/admin/orders"
             className="inline-flex items-center gap-1.5 rounded-full bg-tonel px-3 py-2 text-[11px] font-bold text-cream transition hover:bg-tonel-deep"
@@ -480,6 +835,11 @@ const AdminRegisterPage = () => {
                       {orderTime(order.createdAt)} · {formatMoney(order.price)} ·{" "}
                       {itemCount} art.
                     </p>
+                    {order.scheduledFor && (
+                      <p className="truncate text-[9px] font-semibold text-terracotta-deep">
+                        Prog. {scheduledLabel(order.scheduledFor)}
+                      </p>
+                    )}
                   </div>
                 );
               })}
@@ -505,13 +865,7 @@ const AdminRegisterPage = () => {
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && filteredProducts[0]) {
-                  event.preventDefault();
-                  addProduct(filteredProducts[0]);
-                }
-              }}
-              placeholder="Buscar producto y presionar Enter..."
+              placeholder="Buscar producto..."
               autoFocus
               className="w-full bg-transparent text-sm text-espresso outline-none placeholder:text-espresso/35"
             />
@@ -570,7 +924,8 @@ const AdminRegisterPage = () => {
                     key={product.id}
                     type="button"
                     onClick={() => addProduct(product)}
-                    className="group flex min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-sand bg-white p-2 text-left transition hover:border-terracotta/40 hover:shadow-md"
+                    disabled={product.isSoldOut}
+                    className="group flex min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-sand bg-white p-2 text-left transition hover:border-terracotta/40 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:border-sand disabled:hover:shadow-none"
                   >
                     <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-sand/60 to-cream">
                       {product.img ? (
@@ -595,7 +950,11 @@ const AdminRegisterPage = () => {
                         <p className="truncate text-xs font-bold text-terracotta">
                           {formatMoney(productPrice(product))}
                         </p>
-                        {product.options && product.options.length > 0 ? (
+                        {product.isSoldOut ? (
+                          <span className="shrink-0 rounded-full bg-terracotta/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-terracotta-deep">
+                            Agotado
+                          </span>
+                        ) : product.options && product.options.length > 0 ? (
                           <span className="shrink-0 rounded-full bg-sand px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-espresso/45">
                             Opc.
                           </span>
@@ -614,10 +973,25 @@ const AdminRegisterPage = () => {
         </section>
 
         <aside className="flex min-h-0 flex-col rounded-2xl border border-sand bg-white/80 p-3 shadow-sm">
+          {editingOrder && (
+            <div className="mb-2 flex shrink-0 items-center justify-between gap-2 rounded-xl border border-amber/35 bg-amber/10 px-2.5 py-2">
+              <p className="min-w-0 truncate text-[10px] font-bold text-espresso/70">
+                Editando venta #
+                {editingOrder.id.slice(-5).toUpperCase()}
+              </p>
+              <button
+                type="button"
+                onClick={resetSale}
+                className="shrink-0 rounded-full bg-tonel px-2.5 py-1 text-[9px] font-bold text-cream"
+              >
+                Descartar
+              </button>
+            </div>
+          )}
           <div className="flex shrink-0 items-start justify-between gap-2">
             <div>
               <h2 className="font-display text-xl font-semibold leading-tight text-tonel">
-                Venta actual
+                {editingOrder ? "Editar venta" : "Venta actual"}
               </h2>
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-espresso/40">
                 {cartItemCount} {cartItemCount === 1 ? "artículo" : "artículos"}
@@ -743,16 +1117,16 @@ const AdminRegisterPage = () => {
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-espresso/45">
                   Total
                 </p>
-                <p className="font-display text-2xl font-semibold leading-tight text-tonel">
+                <p className="font-display text-4xl font-semibold leading-none text-tonel">
                   {formatMoney(total)}
                 </p>
               </div>
-              <div className="text-right">
+              <div className="pb-0.5 text-right">
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-espresso/45">
                   Cambio
                 </p>
                 <p
-                  className={`font-display text-lg font-semibold leading-tight ${
+                  className={`font-display text-xl font-semibold leading-tight ${
                     cashValid ? "text-olive" : "text-espresso/35"
                   }`}
                 >
@@ -882,18 +1256,15 @@ const AdminRegisterPage = () => {
             {submitOrder.isPending ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Registrando...
+                {editingOrder ? "Guardando..." : "Registrando..."}
               </>
             ) : (
               <>
                 <Banknote className="h-4 w-4" />
-                Cobrar y registrar
+                {editingOrder ? "Guardar cambios" : "Cobrar y registrar"}
               </>
             )}
           </button>
-          <p className="mt-1 hidden text-center text-[10px] text-espresso/35 xl:block">
-            Enter agrega el primer producto de la búsqueda.
-          </p>
         </aside>
       </div>
 
@@ -934,6 +1305,368 @@ const AdminRegisterPage = () => {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {historyOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-espresso/50 p-3 backdrop-blur-sm sm:items-center">
+          <div className="flex max-h-[92dvh] w-full max-w-2xl flex-col rounded-3xl border border-sand bg-cream p-4 shadow-lift sm:p-5">
+            <div className="flex shrink-0 items-start justify-between gap-4">
+              <div>
+                <p className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta">
+                  <History className="h-3.5 w-3.5" />
+                  Ventas recientes
+                </p>
+                <h2 className="mt-1 font-display text-2xl font-semibold text-tonel">
+                  Historial de caja
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(false)}
+                className="rounded-full p-2 text-espresso/45 transition hover:bg-sand hover:text-tonel"
+                aria-label="Cerrar historial"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain pr-1">
+              {historyLoading ? (
+                Array.from({ length: 4 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-24 animate-pulse rounded-2xl border border-sand bg-white/60"
+                  />
+                ))
+              ) : historyOrders.length === 0 ? (
+                <p className="rounded-2xl border border-dashed border-sand-deep px-4 py-10 text-center text-xs text-espresso/40">
+                  Todavía no hay ventas registradas en caja.
+                </p>
+              ) : (
+                historyOrders.map((order) => {
+                  const items = order.products ?? [];
+                  const itemCount = items.reduce(
+                    (sum, item) => sum + Number(item.quantity || 0),
+                    0
+                  );
+                  const isCancelled = order.status === "cancelled";
+                  const isPaid = order.status === "paid";
+                  const pending = historyPendingId === order.id;
+
+                  return (
+                    <article
+                      key={order.id}
+                      className="rounded-2xl border border-sand bg-white/80 p-3"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-tonel">
+                            #{order.id.slice(-5).toUpperCase()} ·{" "}
+                            {order.customerName || "Cliente en local"}
+                          </p>
+                          <p className="mt-0.5 text-[10px] text-espresso/45">
+                            {orderDateTime(order.createdAt)} · {itemCount}{" "}
+                            {itemCount === 1 ? "artículo" : "artículos"}
+                          </p>
+                        </div>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
+                            isCancelled
+                              ? "bg-terracotta/10 text-terracotta-deep"
+                              : isPaid
+                                ? "bg-olive/10 text-olive"
+                                : "bg-amber/15 text-espresso/60"
+                          }`}
+                        >
+                          {statusLabel[order.status] ?? order.status}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-sand/70 pt-2">
+                        <p className="min-w-0 flex-1 truncate text-[10px] text-espresso/55">
+                          {items.length > 0
+                            ? items
+                                .slice(0, 3)
+                                .map(
+                                  (item) =>
+                                    `${item.quantity}× ${item.title}`
+                                )
+                                .join(" · ")
+                            : "Sin artículos"}
+                          {items.length > 3
+                            ? ` · +${items.length - 3} más`
+                            : ""}
+                        </p>
+                        <p className="font-display text-lg font-semibold text-tonel">
+                          {formatMoney(order.price)}
+                        </p>
+                      </div>
+
+                      <div className="mt-2 flex items-center justify-end gap-1.5">
+                        {isPaid && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => startEdit(order)}
+                              className="inline-flex items-center gap-1 rounded-lg border border-tonel/15 bg-white px-2.5 py-1.5 text-[10px] font-bold text-tonel transition hover:bg-sand"
+                            >
+                              <Pencil className="h-3 w-3" />
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => cancelSale(order)}
+                              disabled={pending}
+                              className="inline-flex items-center gap-1 rounded-lg border border-terracotta/20 px-2.5 py-1.5 text-[10px] font-bold text-terracotta transition hover:bg-terracotta/10 disabled:opacity-50"
+                            >
+                              {pending ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Ban className="h-3 w-3" />
+                              )}
+                              Cancelar
+                            </button>
+                          </>
+                        )}
+                        {isCancelled && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              void updateHistoryStatus(order, "paid")
+                            }
+                            disabled={pending}
+                            className="inline-flex items-center gap-1 rounded-lg border border-tonel/15 bg-white px-2.5 py-1.5 text-[10px] font-bold text-tonel transition hover:bg-sand disabled:opacity-50"
+                          >
+                            {pending ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <RotateCcw className="h-3 w-3" />
+                            )}
+                            Reactivar
+                          </button>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cashOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-espresso/50 p-3 backdrop-blur-sm sm:items-center">
+          <div className="w-full max-w-lg rounded-3xl border border-sand bg-cream p-4 shadow-lift sm:p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-terracotta">
+                  <Wallet className="h-3.5 w-3.5" />
+                  Control de efectivo
+                </p>
+                <h2 className="mt-1 font-display text-2xl font-semibold text-tonel">
+                  Cierre de caja
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCashOpen(false)}
+                className="rounded-full p-2 text-espresso/45 transition hover:bg-sand hover:text-tonel"
+                aria-label="Cerrar caja"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {cashLoading ? (
+              <div className="flex items-center justify-center gap-2 py-12 text-xs font-semibold text-espresso/45">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Consultando caja...
+              </div>
+            ) : cashError ? (
+              <div className="mt-4 rounded-2xl border border-terracotta/20 bg-terracotta/5 p-4 text-center">
+                <p className="text-xs font-semibold text-terracotta-deep">
+                  No pudimos consultar el estado de la caja.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void refetchCash()}
+                  className="mt-3 rounded-full bg-tonel px-4 py-2 text-[10px] font-bold text-cream"
+                >
+                  Reintentar
+                </button>
+              </div>
+            ) : cashSession ? (
+              <div className="mt-4 space-y-3">
+                <div className="rounded-2xl border border-sand bg-white/80 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-espresso/40">
+                      Caja abierta
+                    </p>
+                    <p className="text-[10px] font-semibold text-espresso/50">
+                      {new Date(cashSession.startTime).toLocaleString(
+                        "es-HN",
+                        {
+                          day: "2-digit",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
+                    </p>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded-xl bg-cream/70 p-2.5">
+                      <p className="text-[9px] font-bold uppercase text-espresso/40">
+                        Fondo inicial
+                      </p>
+                      <p className="mt-0.5 font-bold text-tonel">
+                        {formatMoney(cashSession.startingCash)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-cream/70 p-2.5">
+                      <p className="text-[9px] font-bold uppercase text-espresso/40">
+                        Ventas
+                      </p>
+                      <p className="mt-0.5 font-bold text-tonel">
+                        {formatMoney(cashSession.totalSales)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-cream/70 p-2.5">
+                      <p className="text-[9px] font-bold uppercase text-espresso/40">
+                        Órdenes
+                      </p>
+                      <p className="mt-0.5 font-bold text-tonel">
+                        {cashSession.orders}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-cream/70 p-2.5">
+                      <p className="text-[9px] font-bold uppercase text-espresso/40">
+                        Cambio entregado
+                      </p>
+                      <p className="mt-0.5 font-bold text-tonel">
+                        {formatMoney(cashSession.changeGiven)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-end justify-between gap-3 rounded-xl bg-tonel/5 px-3 py-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-tonel/60">
+                      Efectivo esperado
+                    </p>
+                    <p className="font-display text-3xl font-semibold leading-none text-tonel">
+                      {formatMoney(cashSession.expectedCash)}
+                    </p>
+                  </div>
+                </div>
+
+                <label className="block">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-espresso/45">
+                    Efectivo contado
+                  </span>
+                  <div className="mt-1 flex items-center gap-2 rounded-xl border border-sand bg-white px-3 py-2.5 focus-within:border-terracotta">
+                    <span className="text-xs font-bold text-espresso/40">
+                      L.
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={cashCounted}
+                      onChange={(event) =>
+                        setCashCounted(
+                          event.target.value.replace(/[^0-9.]/g, "")
+                        )
+                      }
+                      placeholder="0.00"
+                      className="w-full bg-transparent text-lg font-bold text-tonel outline-none placeholder:text-espresso/25"
+                    />
+                  </div>
+                </label>
+
+                {cashDifference !== null && (
+                  <p
+                    className={`text-xs font-bold ${
+                      Math.abs(cashDifference) < 0.01
+                        ? "text-olive"
+                        : cashDifference > 0
+                          ? "text-tonel"
+                          : "text-terracotta"
+                    }`}
+                  >
+                    Diferencia: {formatMoney(cashDifference)}
+                  </p>
+                )}
+
+                <input
+                  value={cashNotes}
+                  onChange={(event) => setCashNotes(event.target.value)}
+                  placeholder="Observaciones del cierre (opcional)"
+                  className="w-full rounded-xl border border-sand bg-white px-3 py-2.5 text-xs outline-none focus:border-terracotta"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => void saveCash("close")}
+                  disabled={
+                    cashSaving ||
+                    cashCounted.trim() === "" ||
+                    !Number.isFinite(Number(cashCounted)) ||
+                    Number(cashCounted) < 0
+                  }
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-terracotta px-4 py-3 text-sm font-bold text-white transition hover:bg-terracotta-deep disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {cashSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wallet className="h-4 w-4" />
+                  )}
+                  Cerrar caja
+                </button>
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                <p className="rounded-2xl border border-dashed border-sand-deep bg-white/50 p-3 text-xs leading-relaxed text-espresso/55">
+                  No hay una caja abierta. Registra el fondo inicial para
+                  comenzar a controlar el efectivo de este turno.
+                </p>
+                <label className="block">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-espresso/45">
+                    Fondo inicial
+                  </span>
+                  <div className="mt-1 flex items-center gap-2 rounded-xl border border-sand bg-white px-3 py-2.5 focus-within:border-terracotta">
+                    <span className="text-xs font-bold text-espresso/40">
+                      L.
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={cashStarting}
+                      onChange={(event) =>
+                        setCashStarting(
+                          event.target.value.replace(/[^0-9.]/g, "")
+                        )
+                      }
+                      placeholder="0.00"
+                      className="w-full bg-transparent text-lg font-bold text-tonel outline-none placeholder:text-espresso/25"
+                    />
+                  </div>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void saveCash("open")}
+                  disabled={cashSaving}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-tonel px-4 py-3 text-sm font-bold text-cream transition hover:bg-tonel-deep disabled:opacity-50"
+                >
+                  {cashSaving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Banknote className="h-4 w-4" />
+                  )}
+                  Abrir caja
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

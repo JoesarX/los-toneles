@@ -19,6 +19,10 @@ const Price = ({ product }: { product: ProductType }) => {
   const optionTitle = hasOptions ? product.options![selected].title : undefined;
 
   const handleAdd = () => {
+    if (product.isSoldOut) {
+      toast.info("Este producto está agotado por hoy.");
+      return;
+    }
     addToCart({
       id: product.id,
       title: product.title,
@@ -102,10 +106,11 @@ const Price = ({ product }: { product: ProductType }) => {
         <button
           type="button"
           onClick={handleAdd}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-terracotta px-6 py-4 text-sm font-bold text-white shadow-soft transition hover:bg-terracotta-deep"
+          disabled={product.isSoldOut}
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-terracotta px-6 py-4 text-sm font-bold text-white shadow-soft transition hover:bg-terracotta-deep disabled:cursor-not-allowed disabled:bg-espresso/30"
         >
           <ShoppingBag className="h-4 w-4" />
-          Agregar al carrito
+          {product.isSoldOut ? "Agotado por hoy" : "Agregar al carrito"}
         </button>
       </div>
 

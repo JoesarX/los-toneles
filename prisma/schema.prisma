@@ -71,6 +71,7 @@ model Product {
   price         Decimal
   isFeatured    Boolean
   isVisible     Boolean
+  isSoldOut     Boolean         @default(false)
   options       Json[]
   catSlug       String
   CashOrderItem CashOrderItem[]
@@ -88,9 +89,10 @@ model Orders {
   customerName  String?
   amountPaid    Decimal?
   changeGiven   Decimal?
-  paymentMethod String?  @default("cash")
+  paymentMethod String?   @default("cash")
   notes         String?
-  user          User?    @relation(fields: [userEmail], references: [email], onDelete: Restrict)
+  scheduledFor  DateTime?
+  user          User?     @relation(fields: [userEmail], references: [email], onDelete: Restrict)
 
   @@index([status, createdAt])
 }

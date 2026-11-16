@@ -11,7 +11,11 @@ type Props = {
 
 const ProductCard = ({ product, priority = false }: Props) => {
   return (
-    <article className="group relative flex h-full flex-col overflow-hidden rounded-[2rem] border border-sand bg-white/70 shadow-soft transition duration-300 hover:-translate-y-1 hover:border-amber/60 hover:shadow-lift">
+    <article
+      className={`group relative flex h-full flex-col overflow-hidden rounded-[2rem] border border-sand bg-white/70 shadow-soft transition duration-300 hover:-translate-y-1 hover:border-amber/60 hover:shadow-lift ${
+        product.isSoldOut ? "opacity-80" : ""
+      }`}
+    >
       <Link href={`/product/${product.id}`} className="flex h-full flex-col">
         <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-sand/70 via-cream to-sand/40">
           {product.img ? (
@@ -39,6 +43,12 @@ const ProductCard = ({ product, priority = false }: Props) => {
           <span className="absolute right-4 top-4 rounded-full bg-tonel/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-cream">
             {product.catSlug}
           </span>
+
+          {product.isSoldOut && (
+            <span className="absolute inset-x-4 bottom-4 rounded-full bg-terracotta/95 px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-wide text-white shadow-sm backdrop-blur">
+              Agotado por hoy
+            </span>
+          )}
         </div>
 
         <div className="flex flex-1 flex-col p-6">

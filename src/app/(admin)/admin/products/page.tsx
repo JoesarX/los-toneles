@@ -7,6 +7,7 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  PackageX,
   Pencil,
   Plus,
   Search,
@@ -57,7 +58,9 @@ const AdminProductsPage = () => {
       data,
     }: {
       id: string;
-      data: Partial<Pick<ProductType, "isVisible" | "isFeatured">>;
+      data: Partial<
+        Pick<ProductType, "isVisible" | "isFeatured" | "isSoldOut">
+      >;
     }) => {
       const response = await fetch(`/api/products/${id}`, {
         method: "PUT",
@@ -104,6 +107,7 @@ const AdminProductsPage = () => {
 
   const visibleCount = products.filter((product) => product.isVisible).length;
   const featuredCount = products.filter((product) => product.isFeatured).length;
+  const soldOutCount = products.filter((product) => product.isSoldOut).length;
 
   return (
     <div>
@@ -129,11 +133,12 @@ const AdminProductsPage = () => {
         </Link>
       </div>
 
-      <div className="mt-6 grid grid-cols-3 gap-3">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Total", value: products.length },
           { label: "Visibles", value: visibleCount },
           { label: "Destacados", value: featuredCount },
+          { label: "Agotados", value: soldOutCount },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -245,6 +250,12 @@ const AdminProductsPage = () => {
                         Oculto
                       </span>
                     )}
+                    {product.isSoldOut && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-terracotta/90 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur">
+                        <PackageX className="h-3 w-3" />
+                        Agotado
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -318,6 +329,37 @@ const AdminProductsPage = () => {
                           product.isFeatured ? "fill-amber text-amber" : ""
                         }`}
                       />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = !product.isSoldOut;
+                        if (
+                          next &&
+                          !window.confirm(
+                            `¿Marcar "${product.title}" como agotado? Dejará de poder pedirse.`
+                          )
+                        ) {
+                          return;
+                        }
+                        updateProduct.mutate({
+                          id: product.id,
+                          data: { isSoldOut: next },
+                        });
+                      }}
+                      disabled={updating}
+                      className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition disabled:opacity-50 ${
+                        product.isSoldOut
+                          ? "border-terracotta/30 bg-terracotta/10 text-terracotta"
+                          : "border-tonel/15 text-tonel hover:bg-sand"
+                      }`}
+                      title={
+                        product.isSoldOut
+                          ? "Marcar como disponible"
+                          : "Marcar como agotado"
+                      }
+                    >
+                      <PackageX className="h-4 w-4" />
                     </button>
 
                     <Link

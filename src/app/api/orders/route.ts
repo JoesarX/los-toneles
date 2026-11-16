@@ -1,6 +1,11 @@
 import { getAuthSession } from "@/utils/auth";
 import { prisma } from "@/utils/connect";
 import {
+  CLOSED_ORDER_MESSAGE,
+  isWithinBusinessHours,
+  SCHEDULE_OUTSIDE_HOURS_MESSAGE,
+} from "@/lib/business-hours";
+import {
   isOrderStatus,
   OPEN_STATUSES,
   toOrderType,
@@ -105,6 +110,37 @@ export const POST = async (req: NextRequest) => {
     const amountPaid = isRegister ? Number(body.amountPaid) : null;
     const changeGiven = isRegister ? Number(body.changeGiven) : null;
 
+    let scheduledFor: Date | null = null;
+    if (
+      !isRegister &&
+      typeof body.scheduledFor === "string" &&
+      body.scheduledFor.trim()
+    ) {
+      const parsed = new Date(body.scheduledFor);
+      if (!Number.isFinite(parsed.getTime()) || parsed.getTime() <= Date.now()) {
+        return new NextResponse(
+          JSON.stringify({
+            message: "La hora programada debe ser en el futuro.",
+          }),
+          { status: 400 }
+        );
+      }
+      if (!isWithinBusinessHours(parsed)) {
+        return new NextResponse(
+          JSON.stringify({ message: SCHEDULE_OUTSIDE_HOURS_MESSAGE }),
+          { status: 400 }
+        );
+      }
+      scheduledFor = parsed;
+    }
+
+    if (!isRegister && !scheduledFor && !isWithinBusinessHours(new Date())) {
+      return new NextResponse(
+        JSON.stringify({ message: CLOSED_ORDER_MESSAGE }),
+        { status: 400 }
+      );
+    }
+
     const order = await prisma.orders.create({
       data: {
         price,
@@ -112,6 +148,7 @@ export const POST = async (req: NextRequest) => {
         status,
         source,
         userEmail,
+        scheduledFor,
         customerName:
           typeof body.customerName === "string" && body.customerName.trim()
             ? body.customerName.trim()
