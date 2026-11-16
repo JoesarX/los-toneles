@@ -23,18 +23,26 @@ export type ProductType = {
     price: number;
     isFeatured: boolean;
     isVisible: boolean;
+    isSoldOut: boolean;
     catSlug: string;
     options?: { title: string; additionalPrice: number }[];
 };
 
 export type OrderType = {
     id: string;
-    userEmail: string;
+    userEmail?: string | null;
     price: number;
     products: CartItemType[];
     status: string;
     createdAt: Date;
-    intent_id?: String;
+    scheduledFor?: Date | string | null;
+    intent_id?: string;
+    source?: string;
+    customerName?: string | null;
+    amountPaid?: number | null;
+    changeGiven?: number | null;
+    paymentMethod?: string | null;
+    notes?: string | null;
 };
 
 export type CartItemType = {

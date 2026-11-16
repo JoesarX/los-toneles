@@ -1,55 +1,111 @@
-"use client"
-import React from 'react'
-import Link from 'next/link'
-import AdminMenu from './AdminMenu'
-import Image from 'next/image'
+"use client";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { signOut, useSession } from "next-auth/react";
 import {
-    faCartShopping
-} from "@fortawesome/free-solid-svg-icons";
-import UserLinks from './UserLinks';
-import CartIcon from './CartIcon';
+  BarChart3,
+  Calculator,
+  ClipboardList,
+  ExternalLink,
+  LogOut,
+  MessageSquareHeart,
+  UtensilsCrossed,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+const links = [
+  { href: "/admin/orders", label: "Órdenes", icon: ClipboardList },
+  { href: "/admin/register", label: "Caja", icon: Calculator },
+  { href: "/admin/stats", label: "Estadísticas", icon: BarChart3 },
+  { href: "/admin/products", label: "Productos", icon: UtensilsCrossed },
+  { href: "/admin/feedback", label: "Comentarios", icon: MessageSquareHeart },
+];
 
-const AdminNavbar = () => {
-    const user = false;
-    const { data: session, status } = useSession();
-    const router = useRouter();
+const AdminNavBar = () => {
+  const pathname = usePathname();
+  const { data: session, status } = useSession();
+  const initial = session?.user?.email?.charAt(0).toUpperCase() ?? "A";
 
-    if (status == "loading") {
-        return <p>Loading...</p>
-    }
+  if (pathname === "/admin/register") return null;
 
-    // if(status == "unauthenticated" || !session?.user.isAdmin){
-    //     return;
-    // }
-    const isAdmin = session?.user.isAdmin;
+  return (
+    <header className="border-b border-tonel-deep/60 bg-tonel text-cream">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-4">
+          <Link href="/admin/orders" className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-cream/10 text-amber">
+              <UtensilsCrossed className="h-4 w-4" />
+            </span>
+            <span className="leading-none">
+              <span className="block font-display text-lg font-semibold">
+                Los Toneles
+              </span>
+              <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.2em] text-cream/45">
+                Administración
+              </span>
+            </span>
+          </Link>
 
-    return (
-        <div className='h-16 uppercase text-white bg-blue-800 p-4 flex items-center justify-between border-b-2 border-b-blue-950  '>
-            <div className='flex  w-full items-center justify-between'>
-                {/* HAMBURGER MENU */}
-                <div className='flex-1 ml-2 '>
-                    <AdminMenu />
-                </div>
-
-                {/* LOGO */}
-                <div className='text-xl font-bold flex-5 text-center'>
-                    <Link href={"/"}>
-                        Admin Toneles
-                    </Link>
-                </div>
-
-                {/* CART ICON */}
-                <div className='flex justify-end flex-1'>
-                    <Link href={"/"} className='font-bold'>SALIR</Link>
-                </div>
-            </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 rounded-full border border-cream/15 px-2.5 py-2 text-[11px] font-semibold text-cream/75 transition hover:border-cream/40 hover:text-cream sm:gap-2 sm:px-3 sm:text-xs"
+              aria-label="Ver sitio"
+              title="Ver sitio"
+            >
+              <span className="sm:hidden">Sitio</span>
+              <span className="hidden sm:inline">Ver sitio</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Link>
+            {status === "loading" ? (
+              <span className="h-8 w-8 animate-pulse rounded-full bg-cream/10" />
+            ) : (
+              <>
+                <span
+                  className="hidden h-8 w-8 items-center justify-center rounded-full bg-cream/10 text-xs font-bold text-amber sm:flex"
+                  title={session?.user?.email ?? "Administrador"}
+                >
+                  {initial}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="rounded-full p-2 text-cream/60 transition hover:bg-cream/10 hover:text-cream"
+                  aria-label="Cerrar sesión"
+                  title="Cerrar sesión"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
-    )
-}
 
-export default AdminNavbar
+        <nav
+          className="no-scrollbar -mx-1 flex items-center gap-1 overflow-x-auto pb-3"
+          aria-label="Administración"
+        >
+          {links.map((link) => {
+            const active = pathname.startsWith(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-sm font-semibold transition ${
+                  active
+                    ? "bg-cream text-tonel"
+                    : "text-cream/65 hover:bg-cream/10 hover:text-cream"
+                }`}
+              >
+                <link.icon className="h-4 w-4" />
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+    </header>
+  );
+};
+
+export default AdminNavBar;

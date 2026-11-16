@@ -2,12 +2,16 @@
   "name": "food-delivery-system",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.4.2",
@@ -15,33 +19,37 @@
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@prisma/client": "^5.2.0",
-    "@react-hook/media-query": "^1.1.1",
-    "@tanstack/react-query": "^4.33.0",
+    "@tanstack/react-query": "^5.107.1",
     "@types/node": "20.5.0",
-    "@types/react": "18.2.20",
-    "@types/react-dom": "18.2.7",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vercel/analytics": "^1.1.1",
-    "@vercel/blob": "^0.23.2",
+    "@vercel/blob": "^2.9.0",
     "@vercel/postgres": "^0.7.2",
     "@vercel/speed-insights": "^1.0.2",
-    "autoprefixer": "10.4.15",
     "axios": "^1.6.2",
-    "browser-image-compression": "^2.0.2",
     "dotenv": "^16.3.1",
-    "eslint": "8.47.0",
-    "eslint-config-next": "13.4.16",
-    "next": "^13.4.16",
+    "embla-carousel-autoplay": "^8.6.0",
+    "embla-carousel-react": "^8.6.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.6",
+    "lucide-react": "^1.72.0",
+    "next": "^16.4.6",
+    "next-auth": "^4.24.15",
     "next-cloudinary": "^4.23.0",
-    "postcss": "8.4.27",
+    "postcss": "^8.4.27",
     "prisma": "^5.2.0",
-    "react": "18.2.0",
+    "react": "^19.2.9",
     "react-countdown": "^2.3.5",
-    "react-dom": "18.2.0",
+    "react-dom": "^19.2.9",
     "react-icons": "^4.11.0",
-    "react-toastify": "^9.1.3",
+    "react-toastify": "^11.2.0",
     "sweetalert2": "^11.7.31",
-    "tailwindcss": "3.3.3",
-    "typescript": "5.1.6",
-    "zustand": "^4.4.1"
+    "typescript": "^5.9.3",
+    "zustand": "^5.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.1.18",
+    "tailwindcss": "4.1.18"
   }
 }

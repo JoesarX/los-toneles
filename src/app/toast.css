@@ -1,0 +1,88 @@
+.Toastify__toast-container {
+  width: min(24rem, calc(100vw - 2rem));
+  padding: 0;
+}
+
+.Toastify__toast.tonel-toast {
+  --toast-accent: var(--color-tonel);
+  min-height: auto;
+  padding: 0.9rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-sand-deep) 85%, transparent);
+  border-left: 4px solid var(--toast-accent);
+  border-radius: 1.1rem;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 0.9), rgb(250 243 231 / 0.96)),
+    var(--color-cream);
+  color: var(--color-espresso);
+  box-shadow: var(--shadow-lift);
+  font-family: var(--font-sans);
+}
+
+.Toastify__toast--success.tonel-toast {
+  --toast-accent: var(--color-olive);
+}
+
+.Toastify__toast--error.tonel-toast {
+  --toast-accent: var(--color-terracotta);
+}
+
+.Toastify__toast--info.tonel-toast {
+  --toast-accent: var(--color-tonel);
+}
+
+.Toastify__toast--warning.tonel-toast {
+  --toast-accent: var(--color-amber);
+}
+
+.Toastify__toast.tonel-toast .Toastify__toast-body {
+  margin: 0;
+  padding: 0;
+  gap: 0.65rem;
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.Toastify__toast.tonel-toast .Toastify__toast-icon {
+  width: 1.25rem;
+  min-width: 1.25rem;
+  margin-inline-end: 0;
+}
+
+.Toastify__toast.tonel-toast .Toastify__toast-icon svg {
+  fill: var(--toast-accent);
+}
+
+.Toastify__toast.tonel-toast .Toastify__close-button {
+  align-self: center;
+  color: var(--color-espresso);
+  opacity: 0.4;
+  transition: opacity 150ms ease;
+}
+
+.Toastify__toast.tonel-toast .Toastify__close-button:hover {
+  opacity: 0.8;
+}
+
+.Toastify__toast.tonel-toast .Toastify__progress-bar--wrp {
+  height: 3px;
+  background: color-mix(in srgb, var(--toast-accent) 14%, transparent);
+}
+
+.Toastify__toast.tonel-toast .Toastify__progress-bar {
+  background: var(--toast-accent);
+}
+
+.Toastify__toast.tonel-toast .Toastify__progress-bar--bg {
+  background: transparent;
+}
+
+@media (max-width: 480px) {
+  .Toastify__toast-container {
+    right: 0.75rem;
+    bottom: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+  }
+}
